@@ -8,16 +8,12 @@ let keymap = {
 }
 let canvas;
 let ctx;
-const player = new Player();
+const player = new Physics();
 
 function update() {
-    gamepadAPI.update();
-    if (gamepadAPI.buttonPressed('DPad-Right', true)) {
-        console.log('Right');
-    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const block of obstacles) {
-        block.draw();
+    for (const solid of solids) {
+        solid.draw();
     }
     player.update();
     player.draw();
