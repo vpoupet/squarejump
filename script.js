@@ -1,5 +1,3 @@
-const WIDTH = 64;
-const HEIGHT = 48;
 let pressedKeys = new Set();
 let keymap = {
     right: 'ArrowRight',
@@ -8,15 +6,25 @@ let keymap = {
 }
 let canvas;
 let ctx;
-const player = new Physics();
+let timeNow = Date.now() / (SLOWDOWN_FACTOR * 1000);
+let lastUpdate = timeNow;
+let deltaTime = 0;
 
 function update() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const solid of solids) {
-        solid.draw();
+    timeNow = Date.now() / (SLOWDOWN_FACTOR * 1000);
+    if (timeNow - lastUpdate > 1 / FRAMES_PER_SECOND) {
+        deltaTime = Math.min(timeNow - lastUpdate, 2 / FRAMES_PER_SECOND);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const solid of solids) {
+            solid.update();
+            solid.draw();
+        }
+        for (const actor of actors) {
+            actor.update();
+            actor.draw();
+        }
+        lastUpdate = timeNow;
     }
-    player.update();
-    player.draw();
     requestAnimationFrame(update);
 }
 
@@ -29,10 +37,9 @@ window.onload = function () {
     });
     canvas = document.getElementById("game-screen");
     ctx = canvas.getContext('2d');
-    canvas.width = 20 * WIDTH;
-    canvas.height = 20 * HEIGHT;
-    ctx.scale(20, 20);
-    ctx.fillStyle = '#DDDDFF';
+    canvas.width = SCALING * WIDTH;
+    canvas.height = SCALING * HEIGHT;
+    ctx.scale(SCALING, SCALING);
     update();
 }
 
