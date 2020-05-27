@@ -159,6 +159,7 @@ class Player extends Actor {
         this.state = STATE_IDLE;
         this.jumpGraceTimer = 0;
         this.dashCooldownTimer = 0;
+        this.dashTimer = 0;
         this.varJumpTimer = 0;
         this.color = '#FF0000';
     }
@@ -195,7 +196,7 @@ class Player extends Actor {
             }
         }
 
-        // update timers
+        // update timers and counters
         if (isGrounded) {
             this.jumpGraceTimer = JUMP_GRACE_TIME;
             this.nbDashes = 1;
@@ -207,37 +208,47 @@ class Player extends Actor {
         this.dashTimer -= deltaTime;
 
         // update player color
-        this.color = this.nbDashes > 0 ? '#0000FF' : '#FF0000';
+        this.color = this.nbDashes > 0 ? '#FF0000' : '#0000FF';
 
         // player movement
-
         // dash
         if (this.state === STATE_DASH) {
-            if (this.dashTimer > 0) {
-                this.speedX = this.dashX * this.dashSpeed;
-                this.speedY = this.dashY * this.dashSpeed;
+            if (this.dashTimer > DASH_TIME) {
+                this.speedX = 0;
+                this.speedY = 0;
+            } else if (this.dashTimer > 0) {
+                this.speedX = this.dashSpeedX;
+                this.speedY = this.dashSpeedY;
             } else {
                 this.state = STATE_IDLE;
-                const speed = this.dashX && this.dashY ? END_DASH_SPEED / Math.sqrt(2) : END_DASH_SPEED;
-                this.speedX = this.dashX * speed;
-                this.speedY = this.dashY * speed;
-                if (this.dashY === 1) {
+                const speed = this.dashSpeedX && this.dashSpeedY ? END_DASH_SPEED / Math.sqrt(2) : END_DASH_SPEED;
+                this.speedX = Math.sign(this.dashSpeedX) * speed;
+                this.speedY = Math.sign(this.dashSpeedY) * speed;
+                if (this.dashSpeedY > 0) {
                     this.speedY *= END_DASH_UP_FACTOR;
                 }
             }
         } else if (this.nbDashes > 0 && this.inputs.dashPressedBuffer && this.dashCooldownTimer <= 0) {
             if (this.inputs.XAxis || this.inputs.YAxis) {
-                this.dashSpeed = this.inputs.XAxis && this.inputs.YAxis ? DASH_SPEED / Math.sqrt(2) : DASH_SPEED;
-                this.dashX = this.inputs.XAxis;    // remember dash speed for next frames
-                this.dashY = this.inputs.YAxis;
-                this.speedX = this.dashX * this.dashSpeed;
-                this.speedY = this.dashY * this.dashSpeed;
-                this.dashCooldownTimer = DASH_COOLDOWN;
-                this.dashTimer = DASH_TIME;
+                const dashSpeed = this.inputs.XAxis && this.inputs.YAxis ? DASH_SPEED / Math.sqrt(2) : DASH_SPEED;
+                this.dashSpeedX = this.inputs.XAxis * Math.max(Math.abs(this.speedX), dashSpeed);
+                this.dashSpeedY = this.inputs.YAxis * dashSpeed;
+                this.speedX = 0;
+                this.speedY = 0;
+                this.dashTimer = DASH_TIME + DASH_FREEZE_TIME;
+                this.inputs.dashPressedBuffer = false;
+                this.dashCooldownTimer = DASH_COOLDOWN + DASH_FREEZE_TIME;
                 this.nbDashes -= 1;
                 this.state = STATE_DASH;
+                // this.speedX = this.dashX * this.dashSpeed;
+                // this.speedY = this.dashY * this.dashSpeed;
+                // this.dashCooldownTimer = DASH_COOLDOWN;
+                // this.dashTimer = DASH_TIME;
+                // this.nbDashes -= 1;
+                // this.state = STATE_DASH;
             }
         } else {
+            // horizontal movement
             let sx = Math.abs(this.speedX);        // absolute value of the horizontal speed of the player
             let dx = this.speedX >= 0 ? 1 : -1;    // direction in which the player is moving
             let ix = this.inputs.XAxis * dx;       // 1 if player pushing towards moving direction, -1 if pushing opposite, 0 if not pushing
@@ -255,33 +266,37 @@ class Player extends Actor {
             }
 
             // vertical movement
-            if (this.inputs.jumpPressedBuffer &&
-                this.jumpGraceTimer > 0) {
-                this.jumpGraceTimer = 0;
-                this.varJumpTimer = VAR_JUMP_TIME;
-
-                this.speedY = JUMP_SPEED;
-                sx += ix * JUMP_HORIZONTAL_BOOST;
-                this.inputs.jumpPressedBuffer = false;
-                this.jumpStartTime = timeNow;
-            } else if (this.inputs.jumpPressedBuffer &&
-                (hasWallLeft || hasWallRight)) {
-                this.speedY = JUMP_SPEED;
-                sx = WALL_JUMP_HSPEED;
-                dx = hasWallLeft ? 1 : -1;
-                this.wallJumpStartTime = timeNow;
-                this.inputs.jumpPressedBuffer = false;
-                this.jumpStartTime = timeNow;
-            } else if (this.inputs.jumpHeld &&
-                timeNow - this.jumpStartTime <= VAR_JUMP_TIME) {
-                this.speedY = JUMP_SPEED;
-            } else if (!isGrounded) {
-                // check if hugging a wall
-                this.jumpStartTime = 0;
-                if (isWallHugging) {
-                    this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -CLIMB_SLIP_SPEED);
+            if (this.state === STATE_JUMP) {
+                if (this.inputs.jumpHeld && this.varJumpTimer > 0) {
+                    this.speedY = JUMP_SPEED;
                 } else {
-                    this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -MAX_FALL_SPEED);
+                    this.state = STATE_IDLE;
+                    this.varJumpTimer = 0;
+                }
+            } else {
+                if (this.inputs.jumpPressedBuffer && this.jumpGraceTimer > 0) {
+                    // regular jump
+                    this.jumpGraceTimer = 0;
+                    this.varJumpTimer = VAR_JUMP_TIME;
+                    this.inputs.jumpPressedBuffer = false;
+                    this.state = STATE_JUMP;
+                    this.speedY = JUMP_SPEED;
+                    sx += ix * JUMP_HORIZONTAL_BOOST;
+                } else if (this.inputs.jumpPressedBuffer && (hasWallLeft || hasWallRight)) {
+                    // walljump
+                    this.varJumpTimer = VAR_JUMP_TIME;
+                    this.inputs.jumpPressedBuffer = false;
+                    this.state = STATE_JUMP;
+                    this.speedY = JUMP_SPEED;
+                    sx = WALL_JUMP_HSPEED;
+                    dx = hasWallLeft ? 1 : -1;
+                } else if (!isGrounded) {
+                    // free fall
+                    if (isWallHugging) {
+                        this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -CLIMB_SLIP_SPEED);
+                    } else {
+                        this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -MAX_FALL_SPEED);
+                    }
                 }
             }
             this.speedX = dx * sx;
@@ -291,14 +306,14 @@ class Player extends Actor {
         this.moveY(this.speedY * deltaTime, () => this.speedY = 0);
 
         // check if dead
-        if (this.y < 0) {
+        if (this.y <= -this.height) {
             this.die();
         }
     }
 
     draw() {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, HEIGHT - this.y - this.height, this.width, this.height);
+        ctx[1].fillStyle = this.color;
+        ctx[1].fillRect(this.x, HEIGHT - this.y - this.height, this.width, this.height);
     }
 
     die() {
@@ -335,8 +350,8 @@ class Solid {
     }
 
     draw() {
-        ctx.fillStyle = '#888888';
-        ctx.fillRect(this.x, HEIGHT - this.y - this.height, this.width, this.height);
+        ctx[1].fillStyle = '#888888';
+        ctx[1].fillRect(this.x, HEIGHT - this.y - this.height, this.width, this.height);
     }
 
     isOverlapping(actor) {
@@ -442,8 +457,10 @@ solids = [
     new Solid(24, 0, 2, 8),
     new Solid(26, 0, 1, 6),
     new SineMovingSolid(29, 5, 4, 1, 34, 10, 4),
-    new SineMovingSolid(9, 5, 6, 1, 9, 15, 6),
+    new SineMovingSolid(16, 5, 6, 1, 16, 15, 6),
     new Solid(36, 0, 3, 11),
-    new Solid(36, 13, 3, 8),
-    new Solid(41, 0, 3, 15),
+    new Solid(36, 13, 3, 14),
+    new Solid(30, 13, 3, 14),
+    new Solid(10, 20, 2, 1),
+    new Solid(2, 26, 2, 1),
 ];

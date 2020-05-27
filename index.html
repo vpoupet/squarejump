@@ -6,7 +6,18 @@
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<canvas id="game-screen" />
+<div id="game-screen">
+<canvas class="screen-layer" id="layer1"></canvas>
+<canvas class="screen-layer" id="layer2"></canvas>
+</div>
+<div>
+    <h2>Controls</h2>
+    <ul>
+        <li>Up, Down, Left, Right for directions</li>
+        <li>G to jump</li>
+        <li>F (+ direction) to dash</li>
+    </ul>
+</div>
 <script type="text/javascript" src="constants.js"></script>
 <script type="text/javascript" src="physics.js"></script>
 <script type="text/javascript" src="script.js"></script>

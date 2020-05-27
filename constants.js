@@ -17,14 +17,17 @@ const END_DASH_SPEED = 160;
 const END_DASH_UP_FACTOR = .75;
 const DASH_TIME = .15;
 const DASH_COOLDOWN = .2;
+const SUPER_JUMP_HORIZONTAL_SPEED = 260;
 
+// Other constants
+const DASH_FREEZE_TIME = .05;
 const JUMP_BUFFER_TIME = .1;
 const DASH_BUFFER_TIME = .1;
-let SLOWDOWN_FACTOR = 1;
 
-const FRAMES_PER_SECOND = 60;
-
-const WIDTH = 640;
-const HEIGHT = 480;
+const WIDTH = 320;
+const HEIGHT = 240;
 const SCALING = 2;
 const GRID_SIZE = 8;
+let SLOWDOWN_FACTOR = 1;
+const FRAMES_PER_SECOND = 60;
+

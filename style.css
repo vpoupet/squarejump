@@ -1,5 +1,11 @@
 #game-screen {
   border: 1px black solid;
+  position: relative;
+}
+#game-screen canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /*# sourceMappingURL=style.css.map */

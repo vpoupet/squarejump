@@ -5,16 +5,27 @@ let ctx;
 let timeNow = Date.now() / (SLOWDOWN_FACTOR * 1000);
 let lastUpdate = timeNow;
 let deltaTime = 0;
+let isRunning = false;
 
 function slowdown(factor) {
     SLOWDOWN_FACTOR = factor;
     lastUpdate = Date.now() / (SLOWDOWN_FACTOR * 1000);
 }
+
+function start() {
+    isRunning = true;
+    update();
+}
+
+function stop() {
+    isRunning = false;
+}
+
 function update() {
     timeNow = Date.now() / (SLOWDOWN_FACTOR * 1000);
     if (timeNow - lastUpdate > 1 / FRAMES_PER_SECOND) {
         deltaTime = Math.min(timeNow - lastUpdate, 2 / FRAMES_PER_SECOND);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx[1].clearRect(0, 0, canvas[1].width, canvas[1].height);
         for (const solid of solids) {
             solid.update();
             solid.draw();
@@ -25,7 +36,9 @@ function update() {
         }
         lastUpdate = timeNow;
     }
-    requestAnimationFrame(update);
+    if (isRunning) {
+        requestAnimationFrame(update);
+    }
 }
 
 window.onload = function () {
@@ -35,16 +48,30 @@ window.onload = function () {
     document.addEventListener('keyup', e => {
         pressedKeys.delete(e.key);
     });
-    canvas = document.getElementById("game-screen");
-    ctx = canvas.getContext('2d');
-    canvas.width = SCALING * WIDTH;
-    canvas.height = SCALING * HEIGHT;
-    ctx.scale(SCALING, SCALING);
-    update();
-}
+    const screen = document.getElementById('game-screen');
+    screen.style.width = `${WIDTH * SCALING}px`;
+    screen.style.height = `${HEIGHT * SCALING}px`;
+    canvas = Array.from(document.getElementsByClassName("screen-layer"));
+    ctx = canvas.map(c => c.getContext('2d'));
 
-window.addEventListener("gamepadconnected", function(e) {
-    console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
-        e.gamepad.index, e.gamepad.id,
-        e.gamepad.buttons.length, e.gamepad.axes.length);
-});
+    for (let i = 0; i < canvas.length; i++) {
+        canvas[i].width = SCALING * WIDTH;
+        canvas[i].height = SCALING * HEIGHT;
+        ctx[i].scale(SCALING, SCALING);
+    }
+
+    ctx[0].beginPath();
+    for (let i = 0; i <= HEIGHT / GRID_SIZE; i++) {
+        ctx[0].moveTo(0, i * GRID_SIZE);
+        ctx[0].lineTo(WIDTH, i * GRID_SIZE);
+    }
+    for (let i = 0; i <= WIDTH / GRID_SIZE; i++) {
+        ctx[0].moveTo(i * GRID_SIZE, 0);
+        ctx[0].lineTo(i * GRID_SIZE, HEIGHT);
+    }
+    ctx[0].strokeWidth = .5;
+    ctx[0].strokeStyle = '#DDDDDD';
+    ctx[0].stroke();
+
+    start();
+}
