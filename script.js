@@ -2,7 +2,9 @@ let pressedKeys = new Set();
 let keymap = {
     right: 'ArrowRight',
     left: 'ArrowLeft',
-    jump: 'ArrowUp',
+    up: 'ArrowUp',
+    down: 'ArrowDown',
+    jump: 'g',
 }
 let canvas;
 let ctx;

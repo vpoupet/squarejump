@@ -18,9 +18,7 @@ const SLOWDOWN_FACTOR = 1;
 
 const FRAMES_PER_SECOND = 60;
 
-const WIDTH = 320;
-const HEIGHT = 200;
+const WIDTH = 640;
+const HEIGHT = 480;
 const SCALING = 2;
 const GRID_SIZE = 8;
-const START_POSITION_X = 2;
-const START_POSITION_Y = 6;

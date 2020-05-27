@@ -1,5 +1,5 @@
-function segmentsOverlap(left1, size1, left2, size2) {
-    return left1 < left2 + size2 && left2 < left1 + size1;
+function segmentsOverlap(start1, size1, start2, size2) {
+    return start1 < start2 + size2 && start2 < start1 + size1;
 }
 
 class Actor {
@@ -10,7 +10,6 @@ class Actor {
         this.height = height;
         this.xRemainder = 0;
         this.yRemainder = 0;
-        this.grounded = false;
     }
 
     moveX(amount, onCollide = undefined) {
@@ -90,51 +89,90 @@ class Actor {
 }
 
 
-class Player extends Actor {
+class PlayerInputs {
     constructor() {
-        super(START_POSITION_X * GRID_SIZE, START_POSITION_Y * GRID_SIZE, 12, 16);
+        this.horizontalAxis = 0;
+        this.verticalAxis = 0;
+        this.jumpPressed = false;
+        this.jumpHeld = false;
+    }
+
+    update() {
+        this.horizontalAxis = 0;
+        this.verticalAxis = 0;
+        if (pressedKeys.has(keymap['left'])) {
+            this.horizontalAxis -= 1;
+        }
+        if (pressedKeys.has(keymap['right'])) {
+            this.horizontalAxis += 1;
+        }
+        if (pressedKeys.has(keymap['up'])) {
+            this.verticalAxis += 1;
+        }
+        if (pressedKeys.has(keymap['down'])) {
+            this.verticalAxis -= 1;
+        }
+        const prevJump = this.jumpHeld;
+        this.jumpHeld = pressedKeys.has(keymap['jump']);
+        this.jumpPressed = !prevJump && this.jumpHeld;
+    }
+}
+
+
+class Player extends Actor {
+    constructor(x, y) {
+        super(x * GRID_SIZE, y * GRID_SIZE, 12, 16);
+        this.startPositionX = this.x;
+        this.startPositionY = this.y;
         this.speedX = 0;
         this.speedY = 0;
 
         this.lastGrounded = 0;
         this.jumpStartTime = 0;
-        this.canJump = true;
-    }
-
-    hasInput(input) {
-        return pressedKeys.has(keymap[input]);
+        this.wallJumpStartTime = 0;
+        this.inputs = new PlayerInputs;
+        this.color = '#FF0000';
     }
 
     update() {
-        // get inputs
-        const hasInputRight = this.hasInput('right') && !this.hasInput('left');
-        const hasInputLeft = this.hasInput('left') && !this.hasInput('right');
+        this.inputs.update();
 
         // check if grounded
-        this.grounded = false;
+        let isGrounded = false;
+        let isWallHugging = false;
+        let hasWallLeft = false;
+        let hasWallRight = false;
         for (const solid of solids) {
             if (this.y === solid.y + solid.height && segmentsOverlap(this.x, this.width, solid.x, solid.width)) {
-                this.grounded = true;
-                break;
+                isGrounded = true;
+            }
+            if (segmentsOverlap(this.y, this.height, solid.y, solid.height)) {
+                const distanceLeft = this.x - solid.x - solid.width;
+                if (0 <= distanceLeft && distanceLeft <= WALL_JUMP_CHECK_DISTANCE) {
+                    hasWallLeft = true;
+                }
+                const distanceRight = solid.x - this.x - this.width;
+                if (0 <= distanceRight && distanceRight <= WALL_JUMP_CHECK_DISTANCE) {
+                    hasWallRight = true;
+                }
+
+                if ((this.inputs.horizontalAxis === 1 && this.x + this.width === solid.x) ||
+                    (this.inputs.horizontalAxis === -1 && this.x === solid.x + solid.width)) {
+                    isWallHugging = true;
+                }
             }
         }
-        if (this.grounded) {
-            this.canJump = true;
+        this.color = isWallHugging ? '#0000FF' : '#FF0000';
+
+        if (isGrounded) {
             this.lastGrounded = timeNow;
         }
 
         let sx = Math.abs(this.speedX);        // absolute value of the speed of the player
         let dx = this.speedX >= 0 ? 1 : -1;    // direction in which the player is moving
-        let ix;     // 1 if player is pushing in the direction he's moving, -1 if he's pushing opposite his movement, 0 if not pushing at all
-        if (hasInputRight) {
-            ix = dx;
-        } else if (hasInputLeft) {
-            ix = -dx;
-        } else {
-            ix = 0;
-        }
+        let ix = this.inputs.horizontalAxis * dx; // 1 if player pushing towards moving direction, -1 if pushing opposite, 0 if not pushing
 
-        const mult = this.grounded ? 1 : AIR_FACTOR;
+        const mult = isGrounded ? 1 : AIR_FACTOR;
         // horizontal movement
         if (ix <= 0) {
             sx = Math.max(sx - RUN_DECELERATION * deltaTime * mult, 0);
@@ -149,19 +187,30 @@ class Player extends Actor {
         }
 
         // vertical movement
-        if (this.hasInput('jump') &&
-            this.canJump &&
+        if (this.inputs.jumpPressed &&
             timeNow - this.lastGrounded <= JUMP_GRACE_TIME) {
+            this.lastGrounded = 0;
             this.speedY = JUMP_SPEED;
             sx += ix * JUMP_HORIZONTAL_BOOST;
-            this.canJump = false;
             this.jumpStartTime = timeNow;
-        } else if (this.hasInput('jump') &&
+        } else if (this.inputs.jumpPressed &&
+            (hasWallLeft || hasWallRight)) {
+            this.speedY = JUMP_SPEED;
+            sx = WALL_JUMP_HSPEED;
+            dx = hasWallLeft ? 1 : -1;
+            this.wallJumpStartTime = timeNow;
+            this.jumpStartTime = timeNow;
+        } else if (this.inputs.jumpHeld &&
             timeNow - this.jumpStartTime <= VAR_JUMP_TIME) {
             this.speedY = JUMP_SPEED;
-        } else if (!this.grounded) {
+        } else if (!isGrounded) {
+            // check if hugging a wall
             this.jumpStartTime = 0;
-            this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -MAX_FALL_SPEED);
+            if (isWallHugging) {
+                this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -CLIMB_SLIP_SPEED);
+            } else {
+                this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -MAX_FALL_SPEED);
+            }
         }
         this.speedX = dx * sx;
 
@@ -175,13 +224,13 @@ class Player extends Actor {
     }
 
     draw() {
-        ctx.fillStyle = this.grounded ? '#0000FF' : '#FF0000';
+        ctx.fillStyle = this.color;
         ctx.fillRect(this.x, HEIGHT - this.y - this.height, this.width, this.height);
     }
 
     die() {
-        this.x = START_POSITION_X * GRID_SIZE;
-        this.y = START_POSITION_Y * GRID_SIZE;
+        this.x = this.startPositionX;
+        this.y = this.startPositionY;
     }
 
     squish() {
@@ -193,8 +242,8 @@ class Player extends Actor {
             (
                 segmentsOverlap(this.y, this.height, solid.y, solid.height) &&
                 (
-                    (this.hasInputLeft && solid.x + solid.width === this.x) ||
-                    (this.hasInputRight && solid.x === this.x + this.width)
+                    (this.inputs.horizontalAxis === -1 && solid.x + solid.width === this.x) ||
+                    (this.inputs.horizontalAxis === 1 && solid.x === this.x + this.width)
                 )
             );
     }
@@ -309,7 +358,7 @@ class SineMovingSolid extends Solid {
 }
 
 actors = [
-    new Player(),
+    new Player(2, 6),
 ]
 
 solids = [
@@ -321,5 +370,7 @@ solids = [
     new Solid(26, 0, 1, 6),
     new SineMovingSolid(29, 5, 4, 1, 34, 10, 4),
     new SineMovingSolid(9, 5, 6, 1, 9, 15, 6),
-    new Solid(36, 0, 3, 30),
+    new Solid(36, 0, 3, 11),
+    new Solid(36, 13, 3, 8),
+    new Solid(41, 0, 3, 15),
 ];
