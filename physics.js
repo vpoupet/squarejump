@@ -2,6 +2,10 @@ function segmentsOverlap(start1, size1, start2, size2) {
     return start1 < start2 + size2 && start2 < start1 + size1;
 }
 
+const STATE_IDLE = 0;
+const STATE_JUMP = 1;
+const STATE_DASH = 2;
+
 class Actor {
     constructor(x, y, width, height) {
         this.x = x;
@@ -91,30 +95,51 @@ class Actor {
 
 class PlayerInputs {
     constructor() {
-        this.horizontalAxis = 0;
-        this.verticalAxis = 0;
-        this.jumpPressed = false;
+        this.XAxis = 0;
+        this.YAxis = 0;
+        this.jumpPressTime = 0;
+        this.jumpPressedBuffer = false;
         this.jumpHeld = false;
+        this.keymap = {
+            right: 'ArrowRight',
+            left: 'ArrowLeft',
+            up: 'ArrowUp',
+            down: 'ArrowDown',
+            jump: 'g',
+            dash: 'f',
+        }
     }
 
     update() {
-        this.horizontalAxis = 0;
-        this.verticalAxis = 0;
-        if (pressedKeys.has(keymap['left'])) {
-            this.horizontalAxis -= 1;
+        this.XAxis = 0;
+        this.YAxis = 0;
+        if (pressedKeys.has(this.keymap['left'])) {
+            this.XAxis -= 1;
         }
-        if (pressedKeys.has(keymap['right'])) {
-            this.horizontalAxis += 1;
+        if (pressedKeys.has(this.keymap['right'])) {
+            this.XAxis += 1;
         }
-        if (pressedKeys.has(keymap['up'])) {
-            this.verticalAxis += 1;
+        if (pressedKeys.has(this.keymap['up'])) {
+            this.YAxis += 1;
         }
-        if (pressedKeys.has(keymap['down'])) {
-            this.verticalAxis -= 1;
+        if (pressedKeys.has(this.keymap['down'])) {
+            this.YAxis -= 1;
         }
         const prevJump = this.jumpHeld;
-        this.jumpHeld = pressedKeys.has(keymap['jump']);
-        this.jumpPressed = !prevJump && this.jumpHeld;
+        this.jumpHeld = pressedKeys.has(this.keymap['jump']);
+        if (!prevJump && this.jumpHeld) {
+            this.jumpPressTime = timeNow;
+            this.jumpPressedBuffer = true;
+        }
+        this.jumpPressedBuffer = this.jumpPressedBuffer && (timeNow - this.jumpPressTime <= JUMP_BUFFER_TIME);
+
+        const prevDash = this.dashHeld;
+        this.dashHeld = pressedKeys.has(this.keymap['dash']);
+        if (!prevDash && this.dashHeld) {
+            this.dashPressTime = timeNow;
+            this.dashPressedBuffer = true;
+        }
+        this.dashPressedBuffer = this.dashPressedBuffer && (timeNow - this.dashPressTime <= DASH_BUFFER_TIME);
     }
 }
 
@@ -126,27 +151,33 @@ class Player extends Actor {
         this.startPositionY = this.y;
         this.speedX = 0;
         this.speedY = 0;
+        this.dashSpeedX = 0;
+        this.dashSpeedY = 0;
+        this.nbDashes = 1;
 
-        this.lastGrounded = 0;
-        this.jumpStartTime = 0;
-        this.wallJumpStartTime = 0;
         this.inputs = new PlayerInputs;
+        this.state = STATE_IDLE;
+        this.jumpGraceTimer = 0;
+        this.dashCooldownTimer = 0;
+        this.varJumpTimer = 0;
         this.color = '#FF0000';
     }
 
     update() {
         this.inputs.update();
 
-        // check if grounded
+        // check environment
         let isGrounded = false;
         let isWallHugging = false;
         let hasWallLeft = false;
         let hasWallRight = false;
         for (const solid of solids) {
             if (this.y === solid.y + solid.height && segmentsOverlap(this.x, this.width, solid.x, solid.width)) {
+                // player is standing on a solid
                 isGrounded = true;
             }
             if (segmentsOverlap(this.y, this.height, solid.y, solid.height)) {
+                // check for walls on right and left at distance <= WALL_JUMP_CHECK_DISTANCE
                 const distanceLeft = this.x - solid.x - solid.width;
                 if (0 <= distanceLeft && distanceLeft <= WALL_JUMP_CHECK_DISTANCE) {
                     hasWallLeft = true;
@@ -156,63 +187,105 @@ class Player extends Actor {
                     hasWallRight = true;
                 }
 
-                if ((this.inputs.horizontalAxis === 1 && this.x + this.width === solid.x) ||
-                    (this.inputs.horizontalAxis === -1 && this.x === solid.x + solid.width)) {
+                if ((this.inputs.XAxis === 1 && this.x + this.width === solid.x) ||
+                    (this.inputs.XAxis === -1 && this.x === solid.x + solid.width)) {
+                    // check if player is hugging a wall
                     isWallHugging = true;
                 }
             }
         }
-        this.color = isWallHugging ? '#0000FF' : '#FF0000';
 
+        // update timers
         if (isGrounded) {
-            this.lastGrounded = timeNow;
+            this.jumpGraceTimer = JUMP_GRACE_TIME;
+            this.nbDashes = 1;
+        } else {
+            this.jumpGraceTimer -= deltaTime;
         }
+        this.varJumpTimer -= deltaTime;
+        this.dashCooldownTimer -= deltaTime;
+        this.dashTimer -= deltaTime;
 
-        let sx = Math.abs(this.speedX);        // absolute value of the speed of the player
-        let dx = this.speedX >= 0 ? 1 : -1;    // direction in which the player is moving
-        let ix = this.inputs.horizontalAxis * dx; // 1 if player pushing towards moving direction, -1 if pushing opposite, 0 if not pushing
+        // update player color
+        this.color = this.nbDashes > 0 ? '#0000FF' : '#FF0000';
 
-        const mult = isGrounded ? 1 : AIR_FACTOR;
-        // horizontal movement
-        if (ix <= 0) {
-            sx = Math.max(sx - RUN_DECELERATION * deltaTime * mult, 0);
-        } else if (sx > MAX_RUN_SPEED) {
-            sx = Math.max(sx - RUN_DECELERATION * deltaTime * mult, MAX_RUN_SPEED);
-        }
-        // player acceleration
-        if (ix === 1 && sx < MAX_RUN_SPEED) {
-            sx = Math.min(sx + RUN_ACCELERATION * deltaTime * mult, MAX_RUN_SPEED);
-        } else if (ix === -1) {
-            sx -= RUN_ACCELERATION * deltaTime * mult;
-        }
+        // player movement
 
-        // vertical movement
-        if (this.inputs.jumpPressed &&
-            timeNow - this.lastGrounded <= JUMP_GRACE_TIME) {
-            this.lastGrounded = 0;
-            this.speedY = JUMP_SPEED;
-            sx += ix * JUMP_HORIZONTAL_BOOST;
-            this.jumpStartTime = timeNow;
-        } else if (this.inputs.jumpPressed &&
-            (hasWallLeft || hasWallRight)) {
-            this.speedY = JUMP_SPEED;
-            sx = WALL_JUMP_HSPEED;
-            dx = hasWallLeft ? 1 : -1;
-            this.wallJumpStartTime = timeNow;
-            this.jumpStartTime = timeNow;
-        } else if (this.inputs.jumpHeld &&
-            timeNow - this.jumpStartTime <= VAR_JUMP_TIME) {
-            this.speedY = JUMP_SPEED;
-        } else if (!isGrounded) {
-            // check if hugging a wall
-            this.jumpStartTime = 0;
-            if (isWallHugging) {
-                this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -CLIMB_SLIP_SPEED);
+        // dash
+        if (this.state === STATE_DASH) {
+            if (this.dashTimer > 0) {
+                this.speedX = this.dashX * this.dashSpeed;
+                this.speedY = this.dashY * this.dashSpeed;
             } else {
-                this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -MAX_FALL_SPEED);
+                this.state = STATE_IDLE;
+                const speed = this.dashX && this.dashY ? END_DASH_SPEED / Math.sqrt(2) : END_DASH_SPEED;
+                this.speedX = this.dashX * speed;
+                this.speedY = this.dashY * speed;
+                if (this.dashY === 1) {
+                    this.speedY *= END_DASH_UP_FACTOR;
+                }
             }
+        } else if (this.nbDashes > 0 && this.inputs.dashPressedBuffer && this.dashCooldownTimer <= 0) {
+            if (this.inputs.XAxis || this.inputs.YAxis) {
+                this.dashSpeed = this.inputs.XAxis && this.inputs.YAxis ? DASH_SPEED / Math.sqrt(2) : DASH_SPEED;
+                this.dashX = this.inputs.XAxis;    // remember dash speed for next frames
+                this.dashY = this.inputs.YAxis;
+                this.speedX = this.dashX * this.dashSpeed;
+                this.speedY = this.dashY * this.dashSpeed;
+                this.dashCooldownTimer = DASH_COOLDOWN;
+                this.dashTimer = DASH_TIME;
+                this.nbDashes -= 1;
+                this.state = STATE_DASH;
+            }
+        } else {
+            let sx = Math.abs(this.speedX);        // absolute value of the horizontal speed of the player
+            let dx = this.speedX >= 0 ? 1 : -1;    // direction in which the player is moving
+            let ix = this.inputs.XAxis * dx;       // 1 if player pushing towards moving direction, -1 if pushing opposite, 0 if not pushing
+            const mult = isGrounded ? 1 : AIR_FACTOR;
+            if (ix <= 0) {
+                sx = Math.max(sx - RUN_DECELERATION * deltaTime * mult, 0);
+            } else if (sx > MAX_RUN_SPEED) {
+                sx = Math.max(sx - RUN_DECELERATION * deltaTime * mult, MAX_RUN_SPEED);
+            }
+            // player acceleration
+            if (ix === 1 && sx < MAX_RUN_SPEED) {
+                sx = Math.min(sx + RUN_ACCELERATION * deltaTime * mult, MAX_RUN_SPEED);
+            } else if (ix === -1) {
+                sx -= RUN_ACCELERATION * deltaTime * mult;
+            }
+
+            // vertical movement
+            if (this.inputs.jumpPressedBuffer &&
+                this.jumpGraceTimer > 0) {
+                this.jumpGraceTimer = 0;
+                this.varJumpTimer = VAR_JUMP_TIME;
+
+                this.speedY = JUMP_SPEED;
+                sx += ix * JUMP_HORIZONTAL_BOOST;
+                this.inputs.jumpPressedBuffer = false;
+                this.jumpStartTime = timeNow;
+            } else if (this.inputs.jumpPressedBuffer &&
+                (hasWallLeft || hasWallRight)) {
+                this.speedY = JUMP_SPEED;
+                sx = WALL_JUMP_HSPEED;
+                dx = hasWallLeft ? 1 : -1;
+                this.wallJumpStartTime = timeNow;
+                this.inputs.jumpPressedBuffer = false;
+                this.jumpStartTime = timeNow;
+            } else if (this.inputs.jumpHeld &&
+                timeNow - this.jumpStartTime <= VAR_JUMP_TIME) {
+                this.speedY = JUMP_SPEED;
+            } else if (!isGrounded) {
+                // check if hugging a wall
+                this.jumpStartTime = 0;
+                if (isWallHugging) {
+                    this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -CLIMB_SLIP_SPEED);
+                } else {
+                    this.speedY = Math.max(this.speedY - GRAVITY * deltaTime, -MAX_FALL_SPEED);
+                }
+            }
+            this.speedX = dx * sx;
         }
-        this.speedX = dx * sx;
 
         this.moveX(this.speedX * deltaTime, () => this.speedX = 0);
         this.moveY(this.speedY * deltaTime, () => this.speedY = 0);
@@ -242,8 +315,8 @@ class Player extends Actor {
             (
                 segmentsOverlap(this.y, this.height, solid.y, solid.height) &&
                 (
-                    (this.inputs.horizontalAxis === -1 && solid.x + solid.width === this.x) ||
-                    (this.inputs.horizontalAxis === 1 && solid.x === this.x + this.width)
+                    (this.inputs.XAxis === -1 && solid.x + solid.width === this.x) ||
+                    (this.inputs.XAxis === 1 && solid.x === this.x + this.width)
                 )
             );
     }

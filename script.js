@@ -1,17 +1,15 @@
 let pressedKeys = new Set();
-let keymap = {
-    right: 'ArrowRight',
-    left: 'ArrowLeft',
-    up: 'ArrowUp',
-    down: 'ArrowDown',
-    jump: 'g',
-}
+
 let canvas;
 let ctx;
 let timeNow = Date.now() / (SLOWDOWN_FACTOR * 1000);
 let lastUpdate = timeNow;
 let deltaTime = 0;
 
+function slowdown(factor) {
+    SLOWDOWN_FACTOR = factor;
+    lastUpdate = Date.now() / (SLOWDOWN_FACTOR * 1000);
+}
 function update() {
     timeNow = Date.now() / (SLOWDOWN_FACTOR * 1000);
     if (timeNow - lastUpdate > 1 / FRAMES_PER_SECOND) {
