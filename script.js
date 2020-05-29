@@ -61,7 +61,7 @@ xxxxx                             xxxxxx                            xx
 x                                     xx                            xx
 x                     xx              xx                            xx
 x                     xx              xx                            xx
-x                                     xxxxx            xxxx       xxxx
+x                                     xxxxx                       xxxx
 x                                     xx                            xx
 x                           xxxx      xx                            xx
 x          xxxxxxx          xxxx      xx                            xx
@@ -72,7 +72,7 @@ xxx!!xx    xxxxxxxxx       x                                        xx
 xxxxxxx                    x                                        xx
 xxxxxxx                x   x                                        xx
 xxxxxxx                x           !!!xx                            xx
-xxx                    x          !xxxxx            xx              xx
+xxx                    x          !xxxxx                            xx
 xxx                    x          !xxxxx                         xxxxx
 xxx            xxxx    x          !xxxxx!!!!!!!!!!       !!!!!!!!xxxxx
 xxx           !xxxx    xxxx       !xxxxxxxxxxxxxx!!!!!!!!!xxxxxxxxxxxx
@@ -97,6 +97,12 @@ xxxxxxxxxxxxxxxxxxx    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
         {x: 20, y: 18, d: .25},
         {x: 1, y: 18, d: 1.5},
     ]));
+    let movingPlatform = new Solid(0, 0, 3, 1);
+    movingPlatform.setMovement(new SineMovement(52, 6, 52, 14, 2));
+    scene.addSolid(movingPlatform);
+    movingPlatform = new Solid(0, 0, 3, 1);
+    movingPlatform.setMovement(new SineMovement(55, 16, 60, 16, 2));
+    scene.addSolid(movingPlatform);
 
     start();
-}
+};

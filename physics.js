@@ -8,7 +8,9 @@ const STATE_DASH = 2;
 
 
 class Movement {
-    constructor() {}
+    constructor() {
+        this.thing = undefined;
+    }
     update(thing) {}
 }
 
@@ -92,9 +94,9 @@ class Thing {
         ctx.fillRect(this.x - this.scene.scrollX, HEIGHT - this.y - this.height + this.scene.scrollY, this.width, this.height);
     }
 
-    update() {
+    update(deltaTime) {
         if (this.movement) {
-            this.movement.update(this);
+            this.movement.update(deltaTime);
         }
     }
 
@@ -415,7 +417,7 @@ class Solid extends Thing {
         const moveY = Math.round(this.yRemainder);
 
         if (moveX || moveY) {
-            const riding = actors.filter(x => x.isRiding(this));
+            const riding = this.scene.actors.filter(x => x.isRiding(this));
             this.collidable = false;
 
             if (moveX) {
@@ -423,7 +425,7 @@ class Solid extends Thing {
                 this.x += moveX;
 
                 if (moveX > 0) {
-                    for (const actor of actors) {
+                    for (const actor of this.scene.actors) {
                         if (this.overlaps(actor)) {
                             actor.moveX(this.x + this.width - actor.x, () => actor.squish());
                         } else if (riding.includes(actor)) {
@@ -431,7 +433,7 @@ class Solid extends Thing {
                         }
                     }
                 } else {
-                    for (const actor of actors) {
+                    for (const actor of this.scene.actors) {
                         if (this.overlaps(actor)) {
                             actor.moveX(this.x - actor.x - actor.width, () => actor.squish());
                         } else if (riding.includes(actor)) {
@@ -445,7 +447,7 @@ class Solid extends Thing {
                 this.y += moveY;
 
                 if (moveY > 0) {
-                    for (const actor of actors) {
+                    for (const actor of this.scene.actors) {
                         if (this.overlaps(actor)) {
                             actor.moveY(this.y + this.height - actor.y, () => actor.squish());
                         } else if (riding.includes(actor)) {
@@ -453,7 +455,7 @@ class Solid extends Thing {
                         }
                     }
                 } else {
-                    for (const actor of actors) {
+                    for (const actor of this.scene.actors) {
                         if (this.overlaps(actor)) {
                             actor.moveY(this.y - actor.y - actor.height, () => actor.squish());
                         } else if (riding.includes(actor)) {
@@ -465,8 +467,6 @@ class Solid extends Thing {
             this.collidable = true;
         }
     }
-
-    update(deltaTime) {}
 }
 
 
@@ -522,7 +522,7 @@ class SineMovement extends Movement {
 
 class Slime extends Hazard {
     constructor(controlPoints) {
-        super(controlPoints[0].x, controlPoints[0].y, 2, 2);
+        super(0, 0, 2, 2);
         this.setMovement(new LinearInterpolatedMovement(controlPoints));
     }
 }
