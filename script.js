@@ -2,9 +2,8 @@ let pressedKeys = new Set();
 
 let canvas;
 let ctx;
-let timeNow = Date.now() / (SLOWDOWN_FACTOR * 1000);
-let lastUpdate = timeNow;
-let deltaTime = 0;
+let scene;
+let lastUpdate = Date.now();
 let isRunning = false;
 
 function slowdown(factor) {
@@ -22,18 +21,14 @@ function stop() {
 }
 
 function update() {
-    timeNow = Date.now() / (SLOWDOWN_FACTOR * 1000);
-    if (timeNow - lastUpdate > 1 / FRAMES_PER_SECOND) {
-        deltaTime = Math.min(timeNow - lastUpdate, 2 / FRAMES_PER_SECOND);
-        ctx[1].clearRect(0, 0, canvas[1].width, canvas[1].height);
-        for (const solid of solids) {
-            solid.update();
-            solid.draw();
-        }
-        for (const actor of actors) {
-            actor.update();
-            actor.draw();
-        }
+    const timeNow = Date.now();
+    let deltaTime = (timeNow - lastUpdate) / (1000 * SLOWDOWN_FACTOR);
+    if (deltaTime > 1 / FRAMES_PER_SECOND) {
+        deltaTime = Math.min(deltaTime, 2 / FRAMES_PER_SECOND);
+        ctx.fillStyle = '#221e31';  // background color
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        scene.update(deltaTime);
+        scene.draw();
         lastUpdate = timeNow;
     }
     if (isRunning) {
@@ -51,27 +46,57 @@ window.onload = function () {
     const screen = document.getElementById('game-screen');
     screen.style.width = `${WIDTH * SCALING}px`;
     screen.style.height = `${HEIGHT * SCALING}px`;
-    canvas = Array.from(document.getElementsByClassName("screen-layer"));
-    ctx = canvas.map(c => c.getContext('2d'));
+    canvas = document.getElementById("layer1");
+    ctx = canvas.getContext('2d');
 
-    for (let i = 0; i < canvas.length; i++) {
-        canvas[i].width = SCALING * WIDTH;
-        canvas[i].height = SCALING * HEIGHT;
-        ctx[i].scale(SCALING, SCALING);
-    }
+    canvas.width = SCALING * WIDTH;
+    canvas.height = SCALING * HEIGHT;
+    ctx.scale(SCALING, SCALING);
 
-    ctx[0].beginPath();
-    for (let i = 0; i <= HEIGHT / GRID_SIZE; i++) {
-        ctx[0].moveTo(0, i * GRID_SIZE);
-        ctx[0].lineTo(WIDTH, i * GRID_SIZE);
-    }
-    for (let i = 0; i <= WIDTH / GRID_SIZE; i++) {
-        ctx[0].moveTo(i * GRID_SIZE, 0);
-        ctx[0].lineTo(i * GRID_SIZE, HEIGHT);
-    }
-    ctx[0].strokeWidth = .5;
-    ctx[0].strokeStyle = '#DDDDDD';
-    ctx[0].stroke();
+    scene = new Scene(70, 24);
+    scene.loadString(`\
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxx                             xxxxxxxxxxxxxxx               xxxxxx
+xxxxx                             xxxxxx                            xx
+x                                     xx                            xx
+x                     xx              xx                            xx
+x                     xx              xx                            xx
+x                                     xxxxx            xxxx       xxxx
+x                                     xx                            xx
+x                           xxxx      xx                            xx
+x          xxxxxxx          xxxx      xx                            xx
+x          xxxxxxxxx      xxxx        xx                            xx
+x          xxxxxxxxxxxxxxxxxxx        xx                            xx
+x!!        xxxxxxxxx       xxx                                    xxxx
+xxx!!xx    xxxxxxxxx       x                                        xx
+xxxxxxx                    x                                        xx
+xxxxxxx                x   x                                        xx
+xxxxxxx                x           !!!xx                            xx
+xxx                    x          !xxxxx            xx              xx
+xxx                    x          !xxxxx                         xxxxx
+xxx            xxxx    x          !xxxxx!!!!!!!!!!       !!!!!!!!xxxxx
+xxx           !xxxx    xxxx       !xxxxxxxxxxxxxx!!!!!!!!!xxxxxxxxxxxx
+xxxxxxxx!!!!!!!xxxx    xxxx!!!!!!!!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxx    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
+    scene.addPlayer(new Player(16, 4));
+    scene.addHazard(new Slime([
+        {x: 7, y: 20, d: 1.5},
+        {x: 7, y: 20, d: .25},
+        {x: 7, y: 2, d: 1.5},
+        {x: 7, y: 2, d: .25},
+    ]));
+    scene.addHazard(new Slime([
+        {x: 11, y: 20, d: 1.5},
+        {x: 11, y: 20, d: .25},
+        {x: 11, y: 14, d: 1.5},
+        {x: 11, y: 14, d: .25},
+    ]));
+    scene.addHazard(new Slime([
+        {x: 1, y: 18, d: .25},
+        {x: 20, y: 18, d: 1.5},
+        {x: 20, y: 18, d: .25},
+        {x: 1, y: 18, d: 1.5},
+    ]));
 
     start();
 }
