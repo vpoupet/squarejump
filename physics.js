@@ -1,71 +1,35 @@
-function segmentsOverlap(start1, size1, start2, size2) {
-    return start1 < start2 + size2 && start2 < start1 + size1;
-}
+// From Celeste
+const MAX_RUN_SPEED = 90;
+const RUN_ACCELERATION = 1000;
+const RUN_DECELERATION = 400;
+const AIR_FACTOR = .65;
+const JUMP_SPEED = 105;
+const JUMP_HORIZONTAL_BOOST = 40;
+const MAX_FALL_SPEED = 160;
+const GRAVITY = 900;
+const JUMP_GRACE_TIME = .1;
+const VAR_JUMP_TIME = .2;
+const CLIMB_SLIP_SPEED = 30;
+const WALL_JUMP_CHECK_DISTANCE = 3;
+const WALL_JUMP_HSPEED = MAX_RUN_SPEED + JUMP_HORIZONTAL_BOOST;
+const DASH_SPEED = 240;
+const END_DASH_SPEED = 160;
+const END_DASH_UP_FACTOR = .75;
+const DASH_TIME = .15;
+const DASH_COOLDOWN = .2;
+const SUPER_JUMP_HORIZONTAL_SPEED = 260;
 
+// Other constants
+const DASH_FREEZE_TIME = .05;
+const JUMP_BUFFER_TIME = .1;
+const DASH_BUFFER_TIME = .1;
 const STATE_IDLE = 0;
 const STATE_JUMP = 1;
 const STATE_DASH = 2;
 
 
-class Movement {
-    constructor() {
-        this.thing = undefined;
-    }
-    update(thing) {}
-}
-
-
-class PlayerInputs {
-    constructor() {
-        this.XAxis = 0;
-        this.YAxis = 0;
-        this.jumpPressTime = 0;
-        this.dashPressTime = 0;
-        this.jumpPressedBuffer = false;
-        this.jumpHeld = false;
-        this.keymap = {
-            right: 'ArrowRight',
-            left: 'ArrowLeft',
-            up: 'ArrowUp',
-            down: 'ArrowDown',
-            jump: 'g',
-            dash: 'f',
-        }
-    }
-
-    update(deltaTime) {
-        this.jumpPressTime += deltaTime;
-        this.dashPressTime += deltaTime;
-        this.XAxis = 0;
-        this.YAxis = 0;
-        if (pressedKeys.has(this.keymap['left'])) {
-            this.XAxis -= 1;
-        }
-        if (pressedKeys.has(this.keymap['right'])) {
-            this.XAxis += 1;
-        }
-        if (pressedKeys.has(this.keymap['up'])) {
-            this.YAxis += 1;
-        }
-        if (pressedKeys.has(this.keymap['down'])) {
-            this.YAxis -= 1;
-        }
-        const prevJump = this.jumpHeld;
-        this.jumpHeld = pressedKeys.has(this.keymap['jump']);
-        if (!prevJump && this.jumpHeld) {
-            this.jumpPressTime = 0;
-            this.jumpPressedBuffer = true;
-        }
-        this.jumpPressedBuffer = this.jumpPressedBuffer && (this.jumpPressTime <= JUMP_BUFFER_TIME);
-
-        const prevDash = this.dashHeld;
-        this.dashHeld = pressedKeys.has(this.keymap['dash']);
-        if (!prevDash && this.dashHeld) {
-            this.dashPressTime = 0;
-            this.dashPressedBuffer = true;
-        }
-        this.dashPressedBuffer = this.dashPressedBuffer && (this.dashPressTime <= DASH_BUFFER_TIME);
-    }
+function segmentsOverlap(start1, size1, start2, size2) {
+    return start1 < start2 + size2 && start2 < start1 + size1;
 }
 
 
@@ -96,7 +60,7 @@ class Thing {
 
     update(deltaTime) {
         if (this.movement) {
-            this.movement.update(deltaTime);
+            this.movement.update(deltaTime, this);
         }
     }
 
@@ -108,7 +72,7 @@ class Thing {
 
     setMovement(movement) {
         this.movement = movement;
-        movement.thing = this;
+        return this;
     }
 }
 
@@ -468,164 +432,3 @@ class Solid extends Thing {
         }
     }
 }
-
-
-class LinearInterpolatedMovement extends Movement {
-    constructor(controlPoints) {
-        super();
-        this.period = controlPoints.map(p => p.d).reduce((x, y) => x+y, 0);
-        this.controlPoints = controlPoints.map(p => {return {x: GRID_SIZE * p.x, y: GRID_SIZE * p.y, d: p.d}});
-        this.controlPoints.push(this.controlPoints[0]);
-        this.timer = 0;
-        this.thing = undefined;
-    }
-
-    update(deltaTime) {
-        this.timer += deltaTime;
-        this.timer %= this.period;
-        let t = this.timer;
-        for (let i = 0; i < this.controlPoints.length; i++) {
-            let d = this.controlPoints[i].d;
-            if (t >= d) {
-                t -= d;
-            } else {
-                this.thing.moveTo(
-                    (1 - t/d) * this.controlPoints[i].x + (t/d) * this.controlPoints[i+1].x,
-                    (1 - t/d) * this.controlPoints[i].y + (t/d) * this.controlPoints[i+1].y);
-                break;
-            }
-        }
-    }
-}
-
-
-class SineMovement extends Movement {
-    constructor(startX, startY, endX, endY, period) {
-        super();
-        this.startX = startX * GRID_SIZE;
-        this.startY = startY * GRID_SIZE;
-        this.endX = endX * GRID_SIZE;
-        this.endY = endY * GRID_SIZE;
-        this.period = period;
-        this.angle = 0;
-        this.thing = undefined;
-    }
-
-    update(deltaTime) {
-        this.angle += deltaTime * 2 * Math.PI / this.period;
-        this.angle %= 2 * Math.PI;
-        const ratio = (Math.cos(this.angle) + 1) / 2;
-        this.thing.moveTo(ratio * this.startX + (1 - ratio) * this.endX, ratio * this.startY + (1 - ratio) * this.endY);
-    }
-}
-
-
-class Slime extends Hazard {
-    constructor(controlPoints) {
-        super(0, 0, 2, 2);
-        this.setMovement(new LinearInterpolatedMovement(controlPoints));
-    }
-}
-
-
-// hazards.push(new Slime([
-//     {x: 7, y: 20, d: 1.5},
-//     {x: 7, y: 20, d: .25},
-//     {x: 7, y: 2, d: 1.5},
-//     {x: 7, y: 2, d: .25},
-// ]));
-// hazards.push(new Slime([
-//     {x: 11, y: 20, d: 1.5},
-//     {x: 11, y: 20, d: .25},
-//     {x: 11, y: 14, d: 1.5},
-//     {x: 11, y: 14, d: .25},
-// ]));
-// hazards.push(new Slime([
-//     {x: 1, y: 18, d: .25},
-//     {x: 20, y: 18, d: 1.5},
-//     {x: 20, y: 18, d: .25},
-//     {x: 1, y: 18, d: 1.5},
-// ]));
-//
-
-class Scene {
-    constructor(width, height) {
-        this.width = width;
-        this.height = height;
-        this.scrollX = 0;
-        this.scrollY = 0;
-        this.solids = [];
-        this.hazards = [];
-        this.actors = [];
-        this.player = undefined;
-    }
-
-    update(deltaTime) {
-        this.solids.map(x => x.update(deltaTime));
-        this.hazards.map(x => x.update(deltaTime));
-        this.actors.map(x => x.update(deltaTime));
-        if (this.player) {
-            if (this.player.x - this.scrollX > .60 * WIDTH) {
-                this.scrollX = Math.min(this.width * GRID_SIZE - WIDTH, this.player.x - .60 * WIDTH);
-            }
-            if (this.player.x - this.scrollX < .40 * WIDTH) {
-                this.scrollX = Math.max(0, this.player.x - .40 * WIDTH);
-            }
-        }
-    }
-
-    draw() {
-        this.solids.map(x => x.draw());
-        this.hazards.map(x => x.draw());
-        this.actors.map(x => x.draw());
-    }
-
-    addPlayer(player) {
-        this.addActor(player);
-        this.player = player;
-    }
-
-    addActor(actor) {
-        this.actors.push(actor);
-        actor.scene = this;
-    }
-
-    addSolid(solid) {
-        this.solids.push(solid);
-        solid.scene = this;
-    }
-
-    addHazard(hazard) {
-        this.hazards.push(hazard);
-        hazard.scene = this;
-    }
-
-    loadString(s) {
-        const lines = s.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-            for (let j = 0; j < lines[i].length; j++) {
-                if (lines[i][j] === 'x') {
-                    this.addSolid(new Solid(j, lines.length - i - 1, 1, 1));
-                } else if (lines[i][j] === '!') {
-                    this.addHazard(new Hazard(j, lines.length - i - 1, 1, 1));
-                }
-            }
-        }
-    }
-}
-
-// solids = [
-//     new Solid(0, 0, 14, 6),
-//     new Solid(9, 3, 6, 5),
-//     new Solid(20, 0, 1, 2),
-//     new Solid(21, 0, 3, 5),
-//     new Solid(24, 0, 2, 8),
-//     new Solid(26, 0, 1, 6),
-//     new SineMovingSolid(29, 5, 4, 1, 34, 10, 4),
-//     new SineMovingSolid(16, 5, 6, 1, 16, 15, 6),
-//     new Solid(36, 0, 3, 11),
-//     new Solid(36, 13, 3, 14),
-//     new Solid(30, 13, 3, 14),
-//     new Solid(10, 20, 2, 1),
-//     new Solid(2, 26, 2, 1),
-// ];

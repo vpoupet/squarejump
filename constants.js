@@ -1,29 +1,3 @@
-// From Celeste
-const MAX_RUN_SPEED = 90;
-const RUN_ACCELERATION = 1000;
-const RUN_DECELERATION = 400;
-const AIR_FACTOR = .65;
-const JUMP_SPEED = 105;
-const JUMP_HORIZONTAL_BOOST = 40;
-const MAX_FALL_SPEED = 160;
-const GRAVITY = 900;
-const JUMP_GRACE_TIME = .1;
-const VAR_JUMP_TIME = .2;
-const CLIMB_SLIP_SPEED = 30;
-const WALL_JUMP_CHECK_DISTANCE = 3;
-const WALL_JUMP_HSPEED = MAX_RUN_SPEED + JUMP_HORIZONTAL_BOOST;
-const DASH_SPEED = 240;
-const END_DASH_SPEED = 160;
-const END_DASH_UP_FACTOR = .75;
-const DASH_TIME = .15;
-const DASH_COOLDOWN = .2;
-const SUPER_JUMP_HORIZONTAL_SPEED = 260;
-
-// Other constants
-const DASH_FREEZE_TIME = .05;
-const JUMP_BUFFER_TIME = .1;
-const DASH_BUFFER_TIME = .1;
-
 const WIDTH = 320;
 const HEIGHT = 180;
 const SCALING = 2;

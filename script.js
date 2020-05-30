@@ -1,24 +1,27 @@
 let pressedKeys = new Set();
-
 let canvas;
 let ctx;
 let scene;
 let lastUpdate = Date.now();
 let isRunning = false;
 
+
 function slowdown(factor) {
     SLOWDOWN_FACTOR = factor;
     lastUpdate = Date.now() / (SLOWDOWN_FACTOR * 1000);
 }
+
 
 function start() {
     isRunning = true;
     update();
 }
 
+
 function stop() {
     isRunning = false;
 }
+
 
 function update() {
     const timeNow = Date.now();
@@ -35,6 +38,7 @@ function update() {
         requestAnimationFrame(update);
     }
 }
+
 
 window.onload = function () {
     document.addEventListener('keydown', e => {
@@ -79,30 +83,38 @@ xxx           !xxxx    xxxx       !xxxxxxxxxxxxxx!!!!!!!!!xxxxxxxxxxxx
 xxxxxxxx!!!!!!!xxxx    xxxx!!!!!!!!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 xxxxxxxxxxxxxxxxxxx    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
     scene.addPlayer(new Player(16, 4));
-    scene.addHazard(new Slime([
-        {x: 7, y: 20, d: 1.5},
-        {x: 7, y: 20, d: .25},
-        {x: 7, y: 2, d: 1.5},
-        {x: 7, y: 2, d: .25},
-    ]));
-    scene.addHazard(new Slime([
-        {x: 11, y: 20, d: 1.5},
-        {x: 11, y: 20, d: .25},
-        {x: 11, y: 14, d: 1.5},
-        {x: 11, y: 14, d: .25},
-    ]));
-    scene.addHazard(new Slime([
-        {x: 1, y: 18, d: .25},
-        {x: 20, y: 18, d: 1.5},
-        {x: 20, y: 18, d: .25},
-        {x: 1, y: 18, d: 1.5},
-    ]));
-    let movingPlatform = new Solid(0, 0, 3, 1);
-    movingPlatform.setMovement(new SineMovement(52, 6, 52, 14, 2));
-    scene.addSolid(movingPlatform);
-    movingPlatform = new Solid(0, 0, 3, 1);
-    movingPlatform.setMovement(new SineMovement(55, 16, 60, 16, 2));
-    scene.addSolid(movingPlatform);
-
+    scene.addHazard(new Hazard(7, 20, 2, 2).setMovement(new SequenceMovement([
+        new Movement(1.5),
+        new LinearMovement(7, 20, 7, 2, 1),
+        new Movement(1.5),
+        new LinearMovement(7, 2, 7, 20, 1),
+    ], -1)))
+    scene.addHazard(new Hazard(11, 20, 2, 2).setMovement(new SequenceMovement([
+        new Movement(1.5),
+        new LinearMovement(11, 20, 11, 14, .25),
+        new Movement(1.5),
+        new LinearMovement(11, 14, 11, 20, .25),
+    ], -1)));
+    scene.addHazard(new Hazard(1, 18, 2, 2).setMovement(new SequenceMovement([
+        new Movement(1.5),
+        new LinearMovement(1, 18, 20, 18, 1),
+        new Movement(1.5),
+        new LinearMovement(20, 18, 1, 18, 1),
+    ], -1)));
+    // scene.addHazard(new Slime([
+    //     {x: 1, y: 18, d: .25},
+    //     {x: 20, y: 18, d: 1.5},
+    //     {x: 20, y: 18, d: .25},
+    //     {x: 1, y: 18, d: 1.5},
+    // ]));
+    scene.addSolid(
+        new Solid(0, 0, 3, 1).setMovement(
+            new SequenceMovement([
+                new SineMovement(52, 6, 52, 14, 2, 3),
+                new Movement(2),
+            ], -1)));
+    scene.addSolid(
+        new Solid(0, 0, 3, 1).setMovement(
+            new SineMovement(55, 16, 60, 16, 2)));
     start();
 };
