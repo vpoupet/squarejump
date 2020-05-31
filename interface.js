@@ -1,9 +1,11 @@
+const JUMP_BUFFER_TIME = .1;
+const DASH_BUFFER_TIME = .1;
+
+
 class PlayerInputs {
     constructor() {
-        this.XAxis = 0;
-        this.YAxis = 0;
-        this.jumpPressTime = 0;
-        this.dashPressTime = 0;
+        this.xAxis = 0;
+        this.yAxis = 0;
         this.jumpPressedBuffer = false;
         this.jumpHeld = false;
         this.keymap = {
@@ -14,39 +16,45 @@ class PlayerInputs {
             jump: 'g',
             dash: 'f',
         }
+        this.timers = {
+            jumpBuffer: 0,
+            dashBuffer: 0,
+        };
     }
 
     update(deltaTime) {
-        this.jumpPressTime += deltaTime;
-        this.dashPressTime += deltaTime;
-        this.XAxis = 0;
-        this.YAxis = 0;
+        for (const t in this.timers) {
+            this.timers[t] -= deltaTime;
+        }
+        this.xAxis = 0;
+        this.yAxis = 0;
         if (pressedKeys.has(this.keymap['left'])) {
-            this.XAxis -= 1;
+            this.xAxis -= 1;
         }
         if (pressedKeys.has(this.keymap['right'])) {
-            this.XAxis += 1;
+            this.xAxis += 1;
         }
         if (pressedKeys.has(this.keymap['up'])) {
-            this.YAxis += 1;
+            this.yAxis += 1;
         }
         if (pressedKeys.has(this.keymap['down'])) {
-            this.YAxis -= 1;
+            this.yAxis -= 1;
         }
         const prevJump = this.jumpHeld;
         this.jumpHeld = pressedKeys.has(this.keymap['jump']);
         if (!prevJump && this.jumpHeld) {
-            this.jumpPressTime = 0;
+            this.timers.jumpBuffer = JUMP_BUFFER_TIME;
             this.jumpPressedBuffer = true;
+        } else {
+            this.jumpPressedBuffer &= this.timers.jumpBuffer > 0;
         }
-        this.jumpPressedBuffer = this.jumpPressedBuffer && (this.jumpPressTime <= JUMP_BUFFER_TIME);
 
         const prevDash = this.dashHeld;
         this.dashHeld = pressedKeys.has(this.keymap['dash']);
         if (!prevDash && this.dashHeld) {
-            this.dashPressTime = 0;
+            this.timers.dashBuffer = DASH_BUFFER_TIME;
             this.dashPressedBuffer = true;
         }
-        this.dashPressedBuffer = this.dashPressedBuffer && (this.dashPressTime <= DASH_BUFFER_TIME);
+        this.dashPressedBuffer = this.dashPressedBuffer && (this.timers.dashBuffer > 0);
     }
 }

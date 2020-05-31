@@ -1,6 +1,7 @@
-const WIDTH = 320;
-const HEIGHT = 180;
-const SCALING = 2;
 const GRID_SIZE = 8;
+const WIDTH = 40 * GRID_SIZE;
+const HEIGHT = 22.5 * GRID_SIZE;
+const SCALING = 2;
 let SLOWDOWN_FACTOR = 1;
-const FRAMES_PER_SECOND = 60;
+const FIXED_DELTA_TIME = true;
+const FRAME_RATE = 60;
