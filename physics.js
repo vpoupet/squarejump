@@ -25,8 +25,7 @@ const DYING_TIME = .5;
 const STATE_NORMAL = 0;
 const STATE_JUMP = 1;
 const STATE_DASH = 2;
-const STATE_DASH_FREEZE = 3;
-const STATE_DEAD = 4;
+const STATE_DEAD = 3;
 
 function segmentsOverlap(start1, size1, start2, size2) {
     return start1 < start2 + size2 && start2 < start1 + size1;
@@ -235,7 +234,9 @@ class Player extends Actor {
 
         if (this.isGrounded) {
             this.timers.jumpGrace = JUMP_GRACE_TIME;
-            this.nbDashes = 1;
+            if (this.state !== STATE_DASH || this.dashSpeedY <= 0) {
+                this.nbDashes = 1;
+            }
         }
 
         this.updateMovement(deltaTime);
@@ -285,17 +286,14 @@ class Player extends Actor {
                 }
                 this.updateHorizontalMovement(deltaTime);
                 break;
-            case STATE_DASH_FREEZE:
-                if (this.timers.dashFreeze <= 0) {
-                    this.setState(STATE_DASH);
-                }
-                break;
             case STATE_DASH:
-                if (this.tryUpdateJump(deltaTime)) break;
-                if (this.timers.dash > 0) {
-                    // still dashing
+                if (this.timers.dash > DASH_TIME) {
+                    this.speedX = 0;
+                    this.speedY = 0;
+                } else if (0 < this.timers.dash && this.timers.dash <= DASH_TIME) {
                     this.speedX = this.dashSpeedX;
                     this.speedY = this.dashSpeedY;
+                    if (this.tryUpdateJump(deltaTime)) break;
                 } else {
                     // end of dash
                     const speed = this.dashSpeedX && this.dashSpeedY ? END_DASH_SPEED / Math.sqrt(2) : END_DASH_SPEED;
@@ -323,7 +321,8 @@ class Player extends Actor {
             this.speedY = 0;
             this.inputs.dashPressedBuffer = false;
             this.timers.dashCooldown = DASH_COOLDOWN + DASH_FREEZE_TIME;
-            this.setState(STATE_DASH_FREEZE);
+            this.setState(STATE_DASH);
+            this.nbDashes -= 1;
             return true;
         }
         return false;
@@ -390,10 +389,6 @@ class Player extends Actor {
                 case STATE_JUMP:
                     this.timers.varJump = 0;
                     break;
-                case STATE_DASH_FREEZE:
-                    this.timers.dashFreeze = 0;
-                    this.timers.jumpGrace = 0;
-                    break;
                 case STATE_DASH:
                     this.timers.dash = 0;
                     break;
@@ -409,13 +404,9 @@ class Player extends Actor {
                     this.timers.varJump = VAR_JUMP_TIME;
                     this.inputs.jumpPressedBuffer = false;
                     break;
-                case STATE_DASH_FREEZE:
-                    this.timers.dashFreeze = DASH_FREEZE_TIME;
-                    this.timers.dashCooldown = DASH_COOLDOWN;
-                    break;
                 case STATE_DASH:
-                    this.timers.dash = DASH_TIME;
-                    this.nbDashes -= 1;
+                    this.timers.dashCooldown = DASH_COOLDOWN;
+                    this.timers.dash = DASH_TIME + DASH_FREEZE_TIME;
                     break;
                 case STATE_DEAD:
                     this.timers.dying = DYING_TIME;
