@@ -1,5 +1,7 @@
+"use strict";
 const JUMP_BUFFER_TIME = .1;
 const DASH_BUFFER_TIME = .1;
+let pressedKeys = new Set();
 
 
 class PlayerInputs {
@@ -57,4 +59,10 @@ class PlayerInputs {
         }
         this.dashPressedBuffer = this.dashPressedBuffer && (this.timers.dashBuffer > 0);
     }
+}
+
+
+module.exports = {
+    PlayerInputs,
+    pressedKeys,
 }

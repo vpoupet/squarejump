@@ -1,3 +1,6 @@
+"use strict";
+
+
 class Movement {
     constructor(duration, count = 1) {
         this.duration = duration;
@@ -26,10 +29,10 @@ class Movement {
 class LinearMovement extends Movement {
     constructor(x1, y1, x2, y2, duration, count = 1) {
         super(duration, count);
-        this.x1 = x1 * GRID_SIZE;
-        this.y1 = y1 * GRID_SIZE;
-        this.x2 = x2 * GRID_SIZE;
-        this.y2 = y2 * GRID_SIZE;
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
     }
 
     update(deltaTime, thing) {
@@ -70,55 +73,34 @@ class SequenceMovement extends Movement {
     }
 }
 
-// class LinearInterpolatedMovement extends Movement {
-//     constructor(controlPoints) {
-//         super();
-//         this.period = controlPoints.map(p => p.d).reduce((x, y) => x+y, 0);
-//         this.controlPoints = controlPoints.map(p => {return {x: GRID_SIZE * p.x, y: GRID_SIZE * p.y, d: p.d}});
-//         this.controlPoints.push(this.controlPoints[0]);
-//         this.timer = 0;
-//         this.thing = undefined;
-//     }
-//
-//     update(deltaTime, thing) {
-//         this.timer += deltaTime;
-//         this.timer %= this.period;
-//         let t = this.timer;
-//         for (let i = 0; i < this.controlPoints.length; i++) {
-//             let d = this.controlPoints[i].d;
-//             if (t >= d) {
-//                 t -= d;
-//             } else {
-//                 this.thing.moveTo(
-//                     (1 - t/d) * this.controlPoints[i].x + (t/d) * this.controlPoints[i+1].x,
-//                     (1 - t/d) * this.controlPoints[i].y + (t/d) * this.controlPoints[i+1].y);
-//                 break;
-//             }
-//         }
-//     }
-// }
-
 
 class SineMovement
     extends Movement {
     constructor(x1, y1, x2, y2, duration, count = 1) {
         super(duration, count);
-        this.x1 = x1 * GRID_SIZE;
-        this.y1 = y1 * GRID_SIZE;
-        this.x2 = x2 * GRID_SIZE;
-        this.y2 = y2 * GRID_SIZE;
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
         this.duration = duration;
     }
 
     update(deltaTime, thing) {
         super.update(deltaTime, thing);
-        // if (this.timer < this.duration) {
-        const angle = this.timer * 2 * Math.PI / this.duration;
-        const ratio = (Math.cos(angle) + 1) / 2;
-        thing.moveTo(ratio * this.x1 + (1 - ratio) * this.x2, ratio * this.y1 + (1 - ratio) * this.y2);
-        // } else {
-        //     thing.x = this.x2;
-        //     thing.y = this.y2
-        // }
+        if (this.timer < this.duration) {
+            const angle = this.timer * 2 * Math.PI / this.duration;
+            const ratio = (Math.cos(angle) + 1) / 2;
+            thing.moveTo(ratio * this.x1 + (1 - ratio) * this.x2, ratio * this.y1 + (1 - ratio) * this.y2);
+        } else {
+            thing.moveTo(this.x1, this.y1);
+        }
     }
+}
+
+
+module.exports = {
+    Movement,
+    LinearMovement,
+    SequenceMovement,
+    SineMovement,
 }
