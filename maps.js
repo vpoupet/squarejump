@@ -6,10 +6,6 @@ const constants = require('./constants');
 const U = constants.GRID_SIZE;
 
 
-function makeVerticalTransition(scene1, x1, y1, scene2, x2, y2, height) {
-
-}
-
 function makeTransitionUp(scene1, x1, y1, scene2, x2, y2, width) {
     scene1.addElement(new physics.Transition(
         x1 * U, (y1 + 1) * U, width * U, 0, scene2, x2 * U , (y2 + 3) * U
@@ -76,7 +72,7 @@ x                   xxxx        xxxxxxxx
 x             B      xxx        xxxxxxxx
 x             xx     xxx    xxxxxxxxxxxx
 x  P          xx     xxx!!  xxxxxxxxxxxx
-x     xxxxxxxxxx     xxxxx!!xxxxxxxxxxxx
+x-----xxxxxxxxxx     xxxxx!!xxxxxxxxxxxx
 x     xxxxxx  xx     xxxxxxxxxxxxxxxxxxx
 x     xxxxxx  xx     xxxxxxxxxxxxxxxxxxx`);
 
@@ -121,9 +117,9 @@ xxx                 x      !xxxx      xx
 xxx                 x      !xxxx      xx
 xxx                        !xx        xx
 xxx                          x        xx
-xxx     xx--           xxx   x        xx
-xxx     xx    xxx      xxx   x        xx
-xxx     xx    xxx            x        xx
+xxx     xx--                 x        xx
+xxx     xx                   x        xx
+xxx     xx                   x        xx
 xxx     !x                            xx
 xxx     !x!!                           x
 xx!     !xxx                           x
@@ -136,6 +132,12 @@ xxx----xxxx                            x
 xxx    xxxx                            x
 xxx    xxxx                            x`);
 
+CELESTE_04.addSolid(new physics.TriggerBlock(14 * U, 11 * U, 3 * U, 2 * U, new movement.SequenceMovement([
+    new movement.Movement(0.5),
+    new movement.LinearMovement(14 * U, 11 * U, 23 * U, 12 * U, .5),
+    new movement.Movement(1),
+    new movement.LinearMovement(23 * U, 12 * U, 14 * U, 11 * U, 1),
+])));
 makeTransitionUp(CELESTE_03, 33, 23, CELESTE_04, 3, 0, 4);
 
 
@@ -205,6 +207,12 @@ xx   P     xx    xxx     xxx
 xxx----xxxxxx    xxx!!!!!xxx        ---x
 xxx    xxxxxxxxxxxxxxxxxxxxx           x`);
 
+CELESTE_06.addSolid(new physics.TriggerBlock(13 * U, U, 4 * U, 2 * U, new movement.SequenceMovement([
+    new movement.Movement(0.5),
+    new movement.LinearMovement(13 * U, U, 13 * U, 9 * U, .25),
+    new movement.Movement(1),
+    new movement.LinearMovement(13 * U, 9 * U, 13 * U, U, 1),
+])));
 makeTransitionUp(CELESTE_05, 22, 23, CELESTE_06, 3, 0, 4);
 
 
@@ -248,11 +256,6 @@ xxxxxxxxxxxxxxxx  xxxxxxxxxxxxxxxxxxxxxx`);
 
 makeTransitionRight(CELESTE_07, 40, 3, CELESTE_06, 0, 3, 3);
 
-CELESTE_06.addElement(new physics.Transition(
-    -U, 3 * U, 1, 3 * U, CELESTE_07, 38 * U, 3 * U));
-CELESTE_07.addElement(new physics.Transition(
-    40 * U, 3 * U, 1, 3 * U, CELESTE_06, U, 3 * U));
-
 
 const CELESTE_08 = scene.Scene.fromString(`\
 xxx                                     
@@ -278,6 +281,8 @@ x       xxxxxx              xxxxxxxxxxxx
 x P     xxxxxx!!      xxxxxxxxxxxxxxxxxx
 x---xxxxxxxxxxxx!!!!!!xxxxxxxxxxxxxxxxxx
 x   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
+
+makeTransitionUp(CELESTE_06, 35, 36, CELESTE_08, 1, 0, 3);
 
 
 const TEST_LEVEL = scene.Scene.fromString(`\

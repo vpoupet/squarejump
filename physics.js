@@ -277,8 +277,7 @@ class Solid extends Thing {
 }
 
 
-class Hazard
-    extends Thing {
+class Hazard extends Thing {
     constructor(x, y, width, height) {
         super(x, y, width, height);
         this.collidable = true;
@@ -302,6 +301,13 @@ class Hazard
     }
 }
 
+class Spikes extends Hazard {
+    constructor(props) {
+        super(props);
+
+    }
+
+}
 
 class Platform extends Solid {
     constructor(x, y, width) {
@@ -354,6 +360,31 @@ class Transition extends Thing {
 }
 
 
+class TriggerBlock extends Solid {
+    constructor(x, y, width, height, movement) {
+        super(x, y, width, height);
+        this.triggeredMovement = movement;
+        this.color = "#3b3b3b";
+    }
+
+    update(deltaTime) {
+        super.update(deltaTime);
+        const player = this.scene.player;
+        if (player) {
+            if (this.movement && this.movement.remainingCount === 0) {
+                this.movement = undefined;
+            }
+            if (this.movement === undefined &&
+                segmentsOverlap(this.x, this.width, player.x, player.width) &&
+                this.y + this.height === player.y) {
+                this.movement = this.triggeredMovement;
+                this.movement.reset();
+            }
+        }
+    }
+}
+
+
 module.exports = {
     segmentsOverlap,
     Hazard,
@@ -362,4 +393,5 @@ module.exports = {
     Platform,
     Spring,
     Transition,
+    TriggerBlock,
 }

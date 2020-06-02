@@ -6,7 +6,7 @@ const constants = require('./constants');
 
 class Player extends physics.Actor {
     constructor(x, y) {
-        super(x, y, 12, 16);
+        super(x, y, 8, 14);
         this.speedX = 0;
         this.speedY = 0;
         this.dashSpeedX = 0;
