@@ -447,9 +447,7 @@ class TriggerBlock extends Solid {
             if (this.movement && this.movement.remainingCount === 0) {
                 this.movement = undefined;
             }
-            if (this.movement === undefined &&
-                segmentsOverlap(this.x, this.width, player.x, player.width) &&
-                this.y + this.height === player.y) {
+            if (this.movement === undefined && player.isRiding(this)) {
                 this.movement = this.triggeredMovement;
                 this.movement.reset();
             }

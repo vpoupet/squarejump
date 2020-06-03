@@ -233,8 +233,10 @@ class Player extends physics.Actor {
             if (this.isHuggingWall) {
                 if (this.inputs.yAxis === 1) {
                     this.speedY = constants.CLIMB_UP_SPEED;
-                } else {
+                } else if (this.inputs.yAxis === -1) {
                     this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.CLIMB_SLIP_SPEED);
+                } else {
+                    this.speedY = 0;
                 }
             } else {
                 this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.MAX_FALL_SPEED);

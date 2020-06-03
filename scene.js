@@ -9,7 +9,7 @@ class Scene {
         this.width = width;
         this.height = height;
         this.scrollX = 0;
-        this.scrollY = 0;
+        this.scrollY = U / 2;
         this.solids = [];
         this.actors = [];
         this.elements = [];

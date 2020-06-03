@@ -11,6 +11,8 @@ symbols = {
 
 
 def to_string(filename):
+    symbol_index = ord('a')
+
     im = Image.open(filename)
     px = im.load()
     width = 0
@@ -22,7 +24,13 @@ def to_string(filename):
     print(width, height)
     lines = []
     for i in range(im.size[1] - height, im.size[1]):
-        lines.append(''.join(symbols[px[j, i]] for j in range(width)))
+        line = []
+        for j in range(width):
+            if px[j, i] not in symbols:
+                symbols[px[j, i]] = chr(symbol_index)
+                symbol_index += 1
+            line.append(symbols[px[j, i]])
+        lines.append(''.join(line))
     return '\n'.join(lines)
 
 

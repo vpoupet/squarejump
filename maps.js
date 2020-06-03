@@ -7,9 +7,11 @@ const U = constants.GRID_SIZE;
 
 
 function makeTransitionUp(scene1, x1, y1, scene2, x2, y2, width) {
-    scene1.addElement(new physics.Transition(
-        x1 * U, (y1 + 1) * U, width * U, 0, scene2, x2 * U , (y2 + 3) * U
-    ))
+    const transitionUp = new physics.Transition(
+        x1 * U, (y1 + 1) * U, width * U, 0, scene2, x2 * U, (y2 + 3) * U
+    );
+    transitionUp.boostY = constants.TRANSION_BOOST_UP;
+    scene1.addElement(transitionUp);
     scene2.addElement(new physics.Transition(
         x2 * U, (y2 - 1) * U, width * U, 0, scene1, x1 * U, (y1 - 3) * U
     ))
@@ -17,7 +19,7 @@ function makeTransitionUp(scene1, x1, y1, scene2, x2, y2, width) {
 
 function makeTransitionRight(scene1, x1, y1, scene2, x2, y2, height) {
     scene1.addElement(new physics.Transition(
-        x1 * U, y1 * U, 0, height * U, scene2, (x2 + 1) * U , y2 * U
+        x1 * U, y1 * U, 0, height * U, scene2, (x2 + 1) * U, y2 * U
     ))
     scene2.addElement(new physics.Transition(
         x2 * U, y2 * U, 0, height * U, scene1, (x1 - 1) * U, y1 * U
@@ -150,18 +152,18 @@ xxxx                                  xx
 xx                     xxx             x
 xx                xxxxxxxx             x
 xx                xxxxxxxx             x
-xx            S    xxxxxxx    xxx      x
+xx            S    xxxxxxx    ===      x
 xx                  xxxxxx             x
 xx                  xxxxxx             x
 xx                  xxxxxx             x
 xx                     xxx             x
-x                      xx   xxx        x
+x                      xx   ===        x
 x                      xx              x
 x                       x              x
-x                       x         xxx  x
+x                       x         ===  x
 x                                      x
 x                                      x
-x  x          xx             xxx       x
+x  x          xx             ===       x
 xxxx  P       xx                       x
 xxxx----xxxxxxxxxxxxxxxxxx             x
 xxxx    xxxxxx  xxxxxxxxxx             x`);
@@ -269,12 +271,12 @@ xxxxx     !!!!!!    xxxxxxxx
           xxxxxx    xx                  
           xxxxxx D  x                   
           xxxxxx    x                 xx
-xxxxxx    xxxxxx               xxxxxxxxx
-xxxx x    xxxxxx           --xxxxxxxxxxx
-xx   x    xxxxx              xxxxxxxxxxx
-xx        xxxxx                 xxxxxxxx
-x         xxxx                  xxxxxxxx
-x         xxxx                  xxxxxxxx
+xxxxxx    xxxxxx               xx----xxx
+xxxx x    xxxxxx           --xxxx    xxx
+xx   x    xxxxx              xxxx S  xxx
+xx        xxxxx                      xxx
+x         xxxx                       xxx
+x         xxxx                       xxx
 x         xxxx            -----xxxxxxxxx
 x       xxxxxx              !!!xxxxxxxxx
 x       xxxxxx        !!!!!!xxxxxxxxxxxx
@@ -283,6 +285,150 @@ x---xxxxxxxxxxxx!!!!!!xxxxxxxxxxxxxxxxxx
 x   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
 
 makeTransitionUp(CELESTE_06, 35, 36, CELESTE_08, 1, 0, 3);
+
+
+const CELESTE_09 = scene.Scene.fromString(`\
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxx   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxx          xxxx  xxxxxxxxxxxxxxxxxxxxx
+xxx                xxx  xxxx    xxxxxxxx
+x                  xx            xxxxxxx
+                   xx            xxxxxxx
+         !xxxxx----xx        S    xxxxxx
+         !xxxxx                   xxxxxx
+  P      !xxxxx                  xxxxxxx
+xx---    !xxx                   xxxxxxxx
+xx       !xxx            xxxxxxxxxxxxxxx
+xx       !xx               xxxxxxxxxxxxx
+xx   !!  !xx                   xxxxxxxxx
+xx!!!xx  !xx                   xxxxxxxxx
+xxxxxxx                          xxxxxxx
+xxxxxxx                           xxxxxx
+xxxxxxx                           x  xxx
+xxxxxxx                              xxx
+xxxxxxx                              xxx
+xxxxxxx                              xxx
+xxxx!                                 xx
+xxxx!                                 xx
+xxxx!                                  x`);
+
+CELESTE_09.addSolid(new physics.TriggerBlock(14 * U, 3.5 * U, 2 * U, 3 * U, new movement.SequenceMovement([
+    new movement.Movement(.5),
+    new movement.LinearMovement(14 * U, 3.5 * U, 21 * U, 7.5 * U, .5),
+    new movement.Movement(1),
+    new movement.LinearMovement(21 * U, 7.5 * U, 14 * U, 3.5 * U, 1.5),
+])));
+makeTransitionRight(CELESTE_06, 40, 2, CELESTE_09, 0, 14, 4);
+
+
+const CELESTE_10 = scene.Scene.fromString(`\
+xx   xxxx                          xxxxx
+xx   xxx                           xxxxx
+xx   xx                            xxxxx
+xx                                 xxxxx
+xx                                  xxxx
+xx        xxx                       xxxx
+xx        xxx                       xxxx
+xx        xxx                           
+          x                                       
+                                        
+                                     P  
+                                    xxxx
+xxxxxx                              xxxx
+xxxxxx                               xxx
+xxxxxx                               xxx
+xxxxxx         D                     xxx
+xxxxxxxxx                            xxx
+xxxxxxxxx                            xxx
+xxxxxxxxx                    xxxx    xxx
+xxxxxxxxx!!                  xxxxxxxxxxx
+xxxxxxxxxxx!!!!!!!!!!!!!     xxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxx!!!!!xxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
+makeTransitionRight(CELESTE_10, 40, 12, CELESTE_08, 0, 12, 4);
+
+
+const CELESTE_11 = scene.Scene.fromString(`\
+xxxxxxx                                xxxxxxxxx
+xxxxxxx                                xxxxxxxxx
+xxxxx           !!                        xxxxxx
+xx              xx                        xxxxxx
+xx              xx                        xxxxxx
+xx  S           xx                        xxxxxx
+xx              xx                         xxxxx
+xx                                         xxxxx
+xx xxxxxx              !!                   xxxx
+xx xxxxxx              xx           !       xxxx
+xx xxxxxx              xx           x!      xxxx
+xx xxxxxx--     D      xx          !xx      xxxx
+xx xxxxxx              xx          xxx!     xxxx
+xx xxxxxx              !!          xxxx     xxxx
+xx x  xxx                          !!!!      xxx
+xx     x                                     xxx
+xx     x                                     xxx
+xx     x                                     xxx
+xx   xxx!!!!      !!!!!!    B                xxx
+xx   xxxxxxx!!!!!!xxxxxx!!!!xxxx             xxx
+xxx  xxxxxxxxxxxxx  xxxxxxxxxxxx    B     P  xxx
+xxx  xxx   x     x      x    xxxxxxxxxxxxx-- xxx
+xxx  xxx   x     x      x    xxxxxxxxxxxxx   xxx`);
+makeTransitionUp(CELESTE_10, 2, 23, CELESTE_11, 42, 0, 3);
+
+
+const CELESTE_12 = scene.Scene.fromString(`\
+xxx  xxx   x     x      x    xxxxxxxxxxx
+xxx  xxxxxxxxx   x  xxxxxxxxxxxxxxxxxxxx
+xxx  xx    xxxxxxxxxxxxx  xxxxxxxxxxxxxx
+xxx==xx                       xxxxxxxxxx
+xxx                           xxxxxxxxxx
+xxx                           xxxxxxxxxx
+xx                             xxxxxxxxx
+xx                                xxxxxx
+xx                                      
+xxxxxxx                                 
+xxxxxxx                                 
+xxxxxxx                              P  
+xx    x                     xxxxxxxxxxxx
+x                             xxxxxxxxxx
+x                              xxxxxxxxx
+x                              xxxxxxxxx
+x                              xxxxxxxxx
+xxx                           xxxxxxxxxx
+xxx                      xxxxxxxxxxxxxxx
+xxx         xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
+makeTransitionRight(CELESTE_12, 40, 11, CELESTE_10, 0, 11, 4);
+makeTransitionUp(CELESTE_12, 3, 23, CELESTE_11, 3, 0, 2);
+
+
+const CELESTE_13 = scene.Scene.fromString(`\
+    xxxxxxxxxxx!                                 
+    xxxxxxxxxxx!                                 
+    x  xxxxxxxx!                                 
+    x  xxxxxxxx!                                 
+    x    xxxxxx!                                 
+         xxxxxx!                                 
+         xxxxx                                   
+         xxxxx                                   
+          xxxx    D           xxxx               
+  P       xxxx           -----xxxx               
+xxx---    xxxx                xxxxxxxxxxxxxxxxxxx
+xxx       xxxx                 xxxxxxxxxxxxxxxxxx
+xxx       xxxx                 xxxxxxxxxxxxxxxxxx
+xxx       xxxx                 xxxxxxxxxxxxxxxxxx
+xxx       xxxx                  xxxxxxxxxxxxxxxxx
+xxx   !!!!x                     xxxxxxxxxxxxxxxxx
+xxx   ----x                      xxxxxxxxxxxxxxxx
+xxx       x                      xxxxxxxxxxxxxxxx
+xxx                              xxxxxxxxxxxxxxxx
+xxx                               xxxxxxxxxxxxxxx
+xxx                               xxxxxxxxxxxxxxx
+xxx     xxxxx                     xxxxxxxxxxxxxxx
+xxx     xxxxx                     xxxxxxxxxxxxxxx`);
+
+makeTransitionRight(CELESTE_08, 40, 13, CELESTE_13, 0, 13, 10);
 
 
 const TEST_LEVEL = scene.Scene.fromString(`\
@@ -327,21 +473,21 @@ TEST_LEVEL.addElement(
             new movement.LinearMovement(11 * U, 14 * U, 11 * U, 20 * U, .25),
         ], -1)));
 TEST_LEVEL.addElement(
-    new physics.Hazard(1 * U, 18 * U, 2 * U, 2 * U)
+    new physics.Hazard(U, 18 * U, 2 * U, 2 * U)
         .setMovement(new movement.SequenceMovement([
             new movement.Movement(1.5),
-            new movement.LinearMovement(1 * U, 18 * U, 20 * U, 18 * U, 1),
+            new movement.LinearMovement(U, 18 * U, 20 * U, 18 * U, 1),
             new movement.Movement(1.5),
-            new movement.LinearMovement(20 * U, 18 * U, 1 * U, 18 * U, 1),
+            new movement.LinearMovement(20 * U, 18 * U, U, 18 * U, 1),
         ], -1)));
 TEST_LEVEL.addSolid(
-    new physics.Solid(0, 0, 3 * U, 1 * U)
+    new physics.Solid(0, 0, 3 * U, U)
         .setMovement(new movement.SequenceMovement([
             new movement.SineMovement(52 * U, 6 * U, 52 * U, 14 * U, 2, 3),
             new movement.Movement(2),
         ], -1)));
 TEST_LEVEL.addSolid(
-    new physics.Solid(0, 0, 3 * U, 1 * U)
+    new physics.Solid(0, 0, 3 * U, U)
         .setMovement(new movement.SineMovement(55 * U, 16 * U, 60 * U, 16 * U, 2, -1)));
 
 
@@ -354,5 +500,6 @@ module.exports = {
     CELESTE_06,
     CELESTE_07,
     CELESTE_08,
+    CELESTE_09,
     TEST_LEVEL,
 }
