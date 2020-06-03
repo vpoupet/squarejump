@@ -193,7 +193,7 @@ x                       xxx         xxxx
 x                       xxx         xxxx
 x!                   !!!xxx         xxxx
 xx    !!!            xxxxxx          xxx
-xx    xxx            xxxxxx          xxx
+xx!!!!xxx            xxxxxx          xxx
 xxxxxxxxx!!!!    !!!!xxxxxx          xxx
 xxxxxxxxxxxxx    xxxxxxxxxxx         xxx
 xxxxxxxxxxxxx    xxxxx  xxxx          xx
@@ -203,7 +203,7 @@ xxx                      x            xx
                          x              
                          x              
                          x              
-xx   P     xx    xxx     xxx            
+xx  P      xx    xxx     xxx            
 xxx----xxxxxx    xxx!!!!!xxx        ---x
 xxx    xxxxxxxxxxxxxxxxxxxxx           x`);
 
@@ -276,8 +276,8 @@ xx        xxxxx                 xxxxxxxx
 x         xxxx                  xxxxxxxx
 x         xxxx                  xxxxxxxx
 x         xxxx            -----xxxxxxxxx
-x       xxxxxx                 xxxxxxxxx
-x       xxxxxx              xxxxxxxxxxxx
+x       xxxxxx              !!!xxxxxxxxx
+x       xxxxxx        !!!!!!xxxxxxxxxxxx
 x P     xxxxxx!!      xxxxxxxxxxxxxxxxxx
 x---xxxxxxxxxxxx!!!!!!xxxxxxxxxxxxxxxxxx
 x   xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`);
