@@ -362,6 +362,7 @@ class DashDiamond extends Thing {
     constructor(x, y) {
         super(x + .5 * U, y + .5 * U, U, U);
         this.isActive = true;
+        this.color = "#79ff00";
     }
 
     update(deltaTime) {
@@ -380,10 +381,40 @@ class DashDiamond extends Thing {
     }
 
     draw(ctx) {
-        this.color = this.isActive ? "#79ff00" : "#043600";
-        super.draw(ctx);
+        ctx.strokeStyle = this.color;
+        ctx.strokeRect(this.x - this.scene.scrollX, this.y - this.scene.scrollY, this.width, this.height);
+        if (this.isActive) {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x - this.scene.scrollX, this.y - this.scene.scrollY, this.width, this.height);
+        }
     }
 }
+
+
+class Strawberry extends Thing {
+    constructor(x, y) {
+        super(x + .5 * U, y + .5 * U, U, U);
+        this.isActive = true;
+        this.color = "#ff009a";
+    }
+
+    interactWith(player) {
+        if (this.isActive) {
+            player.temporaryStrawberries.push(this);
+            this.isActive = false;
+        }
+    }
+
+    draw(ctx) {
+        ctx.strokeStyle = this.color;
+        ctx.strokeRect(this.x - this.scene.scrollX, this.y - this.scene.scrollY, this.width, this.height);
+        if (this.isActive) {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x - this.scene.scrollX, this.y - this.scene.scrollY, this.width, this.height);
+        }
+    }
+}
+
 
 class Transition extends Thing {
     constructor(x, y, width, height, targetScene, targetX, targetY) {
@@ -394,8 +425,7 @@ class Transition extends Thing {
     }
 
     interactWith(player) {
-        this.scene.setPlayer(undefined);
-        this.targetScene.setPlayer(player);
+        player.transitionScene(this.targetScene);
         player.x += this.targetX - this.x;
         player.y += this.targetY - this.y;
         this.scene.transition = this;
@@ -436,6 +466,7 @@ module.exports = {
     Platform,
     Spring,
     DashDiamond,
+    Strawberry,
     Transition,
     TriggerBlock,
 }

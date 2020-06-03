@@ -19,6 +19,8 @@ class Player extends physics.Actor {
         this.hasWallLeft = false;
         this.hasWallRight = false;
         this.carryingSolids = [];
+        this.temporaryStrawberries = [];
+        this.strawberries = [];
 
         this.state = constants.STATE_NORMAL;
         // timers
@@ -282,7 +284,24 @@ class Player extends physics.Actor {
         }
     }
 
+    transitionScene(targetScene) {
+        // validate temporary strawberries
+        while (this.temporaryStrawberries.length) {
+            const strawberry = this.temporaryStrawberries.pop();
+            const index = strawberry.scene.elements.indexOf(strawberry);
+            strawberry.scene.elements.splice(index, 1);
+            this.strawberries.push(strawberry);
+        }
+        this.scene.setPlayer(undefined);
+        targetScene.setPlayer(this);
+    }
+
     die() {
+        // reactivate temporary strawberries
+        while (this.temporaryStrawberries.length) {
+            const strawberry = this.temporaryStrawberries.pop();
+            strawberry.isActive = true;
+        }
         this.setState(constants.STATE_DEAD);
     }
 

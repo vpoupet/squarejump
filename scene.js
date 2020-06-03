@@ -57,6 +57,9 @@ class Scene {
                     case 'D':
                         scene.addElement(new physics.DashDiamond(x, y));
                         break;
+                    case 'S':
+                        scene.addElement(new physics.Strawberry(x, y));
+                        break;
                     case '-':
                         scene.addSolid(new physics.Platform(x, y, U));
                         break;
