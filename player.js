@@ -18,6 +18,7 @@ class Player extends physics.Actor {
         this.isHuggingWall = false;
         this.hasWallLeft = false;
         this.hasWallRight = false;
+        this.carryingSolids = [];
 
         this.state = constants.STATE_NORMAL;
         // timers
@@ -39,9 +40,11 @@ class Player extends physics.Actor {
         this.isHuggingWall = false;
         this.hasWallLeft = false;
         this.hasWallRight = false;
+        while (this.carryingSolids.length) this.carryingSolids.pop();
         for (const solid of this.scene.solids) {
             if (this.y === solid.y + solid.height && physics.segmentsOverlap(this.x, this.width, solid.x, solid.width)) {
                 // player is standing on a solid
+                this.carryingSolids.push(solid);
                 this.isGrounded = true;
             }
             if (physics.segmentsOverlap(this.y, this.height, solid.y, solid.height)) {
@@ -58,6 +61,7 @@ class Player extends physics.Actor {
                 if ((this.inputs.xAxis === 1 && this.x + this.width === solid.x) ||
                     (this.inputs.xAxis === -1 && this.x === solid.x + solid.width)) {
                     // check if player is hugging a wall
+                    this.carryingSolids.push(solid);
                     this.isHuggingWall = true;
                 }
             }
@@ -111,7 +115,7 @@ class Player extends physics.Actor {
                 break;
             case constants.STATE_JUMP:
                 if (this.inputs.jumpHeld && this.timers.varJump > 0) {
-                    this.speedY = constants.JUMP_SPEED;
+                    this.speedY = Math.max(this.speedY, constants.JUMP_SPEED);
                 } else {
                     this.setState(constants.STATE_NORMAL);
                 }
@@ -168,13 +172,14 @@ class Player extends physics.Actor {
     }
 
     tryUpdateJump(deltaTime) {
+        let didJump = false;
         if (this.inputs.jumpPressedBuffer && this.timers.jumpGrace > 0) {
             // regular jump
             this.inputs.jumpPressedBuffer = false;
             this.speedX += this.inputs.xAxis * constants.JUMP_HORIZONTAL_BOOST;
             this.speedY = constants.JUMP_SPEED;
             this.setState(constants.STATE_JUMP);
-            return true;
+            didJump = true;
         } else if (this.inputs.jumpPressedBuffer && (this.hasWallLeft || this.hasWallRight)) {
             // walljump
             this.inputs.jumpPressedBuffer = false;
@@ -182,9 +187,21 @@ class Player extends physics.Actor {
             this.speedX = dx * constants.WALL_JUMP_HSPEED;
             this.speedY = constants.JUMP_SPEED;
             this.setState(constants.STATE_JUMP);
-            return true;
+            didJump = true;
         }
-        return false;
+        if (didJump) {
+            let mx = 0;
+            let my = 0;
+            for (const solid of this.carryingSolids) {
+                const sx = solid.getMomentumX();
+                const sy = solid.getMomentumY();
+                if (Math.abs(sx) > Math.abs(mx)) mx = sx;
+                if (Math.abs(sy) > Math.abs(my)) my = sy;
+            }
+            this.speedX += constants.MOMENTUM_FACTOR * mx;
+            this.speedY += constants.MOMENTUM_FACTOR * my;
+        }
+        return didJump;
     }
 
     updateHorizontalMovement(deltaTime) {
@@ -212,7 +229,11 @@ class Player extends physics.Actor {
     updateVerticalMovement(deltaTime) {
         if (!this.isGrounded) {
             if (this.isHuggingWall) {
-                this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.CLIMB_SLIP_SPEED);
+                if (this.inputs.yAxis === 1) {
+                    this.speedY = constants.CLIMB_UP_SPEED;
+                } else {
+                    this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.CLIMB_SLIP_SPEED);
+                }
             } else {
                 this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.MAX_FALL_SPEED);
             }

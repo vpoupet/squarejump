@@ -176,10 +176,27 @@ class Solid extends Thing {
     constructor(x, y, width, height) {
         super(x, y, width, height);
         this.collidable = true;
-        this.color = '#a1593d';
+        this.color = '#6c2c0b';
+        this.momentumX = 0;
+        this.momentumY = 0;
+        this.timers.momentum = 0;
     }
 
-    move(dx, dy) {
+    getMomentumX() {
+        if (this.timers.momentum > 0) {
+            return this.momentumX;
+        }
+        return 0;
+    }
+
+    getMomentumY() {
+        if (this.timers.momentum > 0) {
+            return this.momentumY;
+        }
+        return 0;
+    }
+
+    move(dx, dy, mx = undefined, my = undefined) {
         this.xRemainder += dx;
         this.yRemainder += dy;
         const moveX = Math.round(this.xRemainder);
@@ -254,6 +271,12 @@ class Solid extends Thing {
         }
     }
 
+    setMomentum(mx, my) {
+        this.timers.momentum = constants.MOMENTUM_STORE_TIME;
+        this.momentumX = mx;
+        this.momentumY = my;
+    }
+
     collidesWithMovingActor(actor, dx = 0, dy = 0) {
         if (dx > 0) {
             return this.collidable &&
@@ -301,18 +324,11 @@ class Hazard extends Thing {
     }
 }
 
-class Spikes extends Hazard {
-    constructor(props) {
-        super(props);
-
-    }
-
-}
 
 class Platform extends Solid {
     constructor(x, y, width) {
         super(x, y + U / 2, width, U / 2);
-        this.color = "#AB5C1C";
+        this.color = "#a8612a";
     }
 
     collidesWithMovingActor(actor, dx = 0, dy = 0) {
@@ -329,7 +345,7 @@ class Platform extends Solid {
 
 class Spring extends Thing {
     constructor(x, y) {
-        super(x, y, 2 * U, U);
+        super(x, y, 2 * U, U / 2);
         this.color = "#dedf35";
     }
 
@@ -341,6 +357,33 @@ class Spring extends Thing {
     }
 }
 
+
+class DashDiamond extends Thing {
+    constructor(x, y) {
+        super(x + .5 * U, y + .5 * U, U, U);
+        this.isActive = true;
+    }
+
+    update(deltaTime) {
+        super.update(deltaTime)
+        if (!this.isActive && this.timers.cooldown <= 0) {
+            this.isActive = true;
+        }
+    }
+
+    interactWith(player) {
+        if (this.isActive) {
+            player.restoreDash();
+            this.isActive = false;
+            this.timers.cooldown = 2;
+        }
+    }
+
+    draw(ctx) {
+        this.color = this.isActive ? "#79ff00" : "#043600";
+        super.draw(ctx);
+    }
+}
 
 class Transition extends Thing {
     constructor(x, y, width, height, targetScene, targetX, targetY) {
@@ -392,6 +435,7 @@ module.exports = {
     Actor,
     Platform,
     Spring,
+    DashDiamond,
     Transition,
     TriggerBlock,
 }

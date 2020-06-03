@@ -209,7 +209,7 @@ xxx    xxxxxxxxxxxxxxxxxxxxx           x`);
 
 CELESTE_06.addSolid(new physics.TriggerBlock(13 * U, U, 4 * U, 2 * U, new movement.SequenceMovement([
     new movement.Movement(0.5),
-    new movement.LinearMovement(13 * U, U, 13 * U, 9 * U, .25),
+    new movement.LinearMovement(13 * U, U, 13 * U, 9 * U, .3),
     new movement.Movement(1),
     new movement.LinearMovement(13 * U, 9 * U, 13 * U, U, 1),
 ])));
@@ -267,7 +267,7 @@ xxx                 !!!!xxxx
 xxxxx     !!!!!!    xxxxxxxx            
           xxxxxx    xxxxxx              
           xxxxxx    xx                  
-          xxxxxx S  x                   
+          xxxxxx D  x                   
           xxxxxx    x                 xx
 xxxxxx    xxxxxx               xxxxxxxxx
 xxxx x    xxxxxx           --xxxxxxxxxxx

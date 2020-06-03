@@ -33,6 +33,8 @@ class LinearMovement extends Movement {
         this.y1 = y1;
         this.x2 = x2;
         this.y2 = y2;
+        this.mx = (x2 - x1) / duration;
+        this.my = (y2 - y1) / duration;
     }
 
     update(deltaTime, thing) {
@@ -40,8 +42,9 @@ class LinearMovement extends Movement {
         if (this.timer < this.duration) {
             const r = this.timer / this.duration;
             thing.moveTo((1 - r) * this.x1 + r * this.x2, (1 - r) * this.y1 + r * this.y2);
+            thing.setMomentum(this.mx, this.my);
         } else {
-            thing.moveTo(thing.x = this.x2, thing.y = this.y2);
+            thing.moveTo(this.x2, this.y2);
         }
     }
 }

@@ -54,6 +54,9 @@ class Scene {
                     case 'B':
                         scene.addElement(new physics.Spring(x, y));
                         break;
+                    case 'D':
+                        scene.addElement(new physics.DashDiamond(x, y));
+                        break;
                     case '-':
                         scene.addSolid(new physics.Platform(x, y, U));
                         break;
@@ -79,7 +82,7 @@ class Scene {
             if (this.player.y - this.scrollY > .60 * constants.VIEW_HEIGHT) {
                 this.scrollY = Math.min(this.height - constants.VIEW_HEIGHT, this.player.y - .60 * constants.VIEW_HEIGHT);
             } else if (this.player.y - this.scrollY < .40 * constants.VIEW_HEIGHT) {
-                this.scrollY = Math.max(0, this.player.y - .40 * constants.VIEW_HEIGHT);
+                this.scrollY = Math.max(U / 2, this.player.y - .40 * constants.VIEW_HEIGHT);
             }
         }
     }

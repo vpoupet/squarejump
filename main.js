@@ -54,7 +54,7 @@ function update() {
                 1 / FRAME_RATE :
                 Math.min((timeNow - lastUpdate) / (1000 * SLOWDOWN_FACTOR), .05);
 
-            context.fillStyle = '#221e31';  // background color
+            context.fillStyle = '#ffffff';  // background color
             context.fillRect(0, 0, SCALING * constants.VIEW_WIDTH, SCALING * constants.VIEW_HEIGHT);
             currentScene.update(deltaTime);
             // Transition from one room to another
@@ -75,7 +75,7 @@ window.onload = function () {
     document.addEventListener('keydown', e => {
         inputs.pressedKeys.add(e.key);
         switch (e.key) {
-            case '<':
+            case 'w':
                 if (SLOWDOWN_FACTOR === 1) {
                     slowdown(8);
                 } else {
