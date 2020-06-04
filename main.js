@@ -79,6 +79,13 @@ function update() {
     }
 }
 
+window.getKeyMap = function() {
+    return currentScene.player.inputs.keymap;
+}
+
+window.setKeyMap = function(d) {
+    currentScene.player.inputs.keymap = d;
+};
 
 window.onload = function () {
     document.addEventListener('keydown', e => {
