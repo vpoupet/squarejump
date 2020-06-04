@@ -44,27 +44,29 @@ class Player extends physics.Actor {
         this.hasWallRight = false;
         this.carryingSolids.clear();
         for (const solid of this.scene.solids) {
-            if (this.y === solid.y + solid.height && physics.segmentsOverlap(this.x, this.width, solid.x, solid.width)) {
-                // player is standing on a solid
-                this.carryingSolids.add(solid);
-                this.isGrounded = true;
-            }
-            if (physics.segmentsOverlap(this.y, this.height, solid.y, solid.height)) {
-                // check for walls on right and left at distance <= WALL_JUMP_CHECK_DISTANCE
-                const distanceLeft = this.x - solid.x - solid.width;
-                if (0 <= distanceLeft && distanceLeft < constants.WALL_JUMP_CHECK_DISTANCE) {
-                    this.hasWallLeft = true;
-                }
-                const distanceRight = solid.x - this.x - this.width;
-                if (0 <= distanceRight && distanceRight < constants.WALL_JUMP_CHECK_DISTANCE) {
-                    this.hasWallRight = true;
-                }
-
-                if ((this.inputs.xAxis === 1 && this.x + this.width === solid.x) ||
-                    (this.inputs.xAxis === -1 && this.x === solid.x + solid.width)) {
-                    // check if player is hugging a wall
+            if (solid.isActive) {
+                if (this.y === solid.y + solid.height && physics.segmentsOverlap(this.x, this.width, solid.x, solid.width)) {
+                    // player is standing on a solid
                     this.carryingSolids.add(solid);
-                    this.isHuggingWall = true;
+                    this.isGrounded = true;
+                }
+                if (physics.segmentsOverlap(this.y, this.height, solid.y, solid.height)) {
+                    // check for walls on right and left at distance <= WALL_JUMP_CHECK_DISTANCE
+                    const distanceLeft = this.x - solid.x - solid.width;
+                    if (0 <= distanceLeft && distanceLeft < constants.WALL_JUMP_CHECK_DISTANCE) {
+                        this.hasWallLeft = true;
+                    }
+                    const distanceRight = solid.x - this.x - this.width;
+                    if (0 <= distanceRight && distanceRight < constants.WALL_JUMP_CHECK_DISTANCE) {
+                        this.hasWallRight = true;
+                    }
+
+                    if ((this.inputs.xAxis === 1 && this.x + this.width === solid.x) ||
+                        (this.inputs.xAxis === -1 && this.x === solid.x + solid.width)) {
+                        // check if player is hugging a wall
+                        this.carryingSolids.add(solid);
+                        this.isHuggingWall = true;
+                    }
                 }
             }
         }
@@ -84,13 +86,12 @@ class Player extends physics.Actor {
         // set color
         this.color = this.nbDashes > 0 ? '#a63636' : '#3fb0f6';
         if (this.state === constants.STATE_DEAD) {
-            let alpha = Math.max(0, Math.floor(255 * this.timers.dying / constants.DYING_TIME));
-            this.color = "" + this.color + ("0" + alpha.toString(16)).substr(-2);
+            this.color = "" + this.color + physics.alphaToString(this.timers.dying / constants.DYING_TIME);
         }
 
         // interact with objects
         for (const element of this.scene.elements) {
-            if (this.overlaps(element)) {
+            if (element.isActive && this.overlaps(element)) {
                 element.interactWith(this);
             }
         }
@@ -323,7 +324,12 @@ class Player extends physics.Actor {
     }
 
     restoreDash() {
-        this.nbDashes = 1;
+        if (this.nbDashes === 1) {
+            return false;
+        } else {
+            this.nbDashes = 1;
+            return true;
+        }
     }
 
     squish() {

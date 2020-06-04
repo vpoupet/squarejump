@@ -63,6 +63,9 @@ class Scene {
                     case '-':
                         scene.addSolid(new physics.Platform(x, y, U));
                         break;
+                    case '=':
+                        scene.addSolid(new physics.CrumblingBlock(x, y, U, U));
+                        break;
                     default:
                         break;
                 }
@@ -84,14 +87,22 @@ class Scene {
         // scroll view
         if (this.player) {
             if (this.player.x - this.scrollX > .60 * constants.VIEW_WIDTH) {
-                this.scrollX = Math.min(this.width - constants.VIEW_WIDTH, this.player.x - .60 * constants.VIEW_WIDTH);
+                this.scrollX = Math.min(
+                    this.width - constants.VIEW_WIDTH,
+                    this.player.x - .60 * constants.VIEW_WIDTH);
             } else if (this.player.x - this.scrollX < .40 * constants.VIEW_WIDTH) {
-                this.scrollX = Math.max(0, this.player.x - .40 * constants.VIEW_WIDTH);
+                this.scrollX = Math.max(
+                    0,
+                    this.player.x - .40 * constants.VIEW_WIDTH);
             }
             if (this.player.y - this.scrollY > .60 * constants.VIEW_HEIGHT) {
-                this.scrollY = Math.min(this.height - constants.VIEW_HEIGHT, this.player.y - .60 * constants.VIEW_HEIGHT);
+                this.scrollY = Math.min(
+                    this.height - constants.VIEW_HEIGHT,
+                    this.player.y - .60 * constants.VIEW_HEIGHT);
             } else if (this.player.y - this.scrollY < .40 * constants.VIEW_HEIGHT) {
-                this.scrollY = Math.max(U / 2, this.player.y - .40 * constants.VIEW_HEIGHT);
+                this.scrollY = Math.max(
+                    U / 2,
+                    this.player.y - .40 * constants.VIEW_HEIGHT);
             }
         }
     }

@@ -19,6 +19,17 @@ function segmentsOverlap(start1, size1, start2, size2) {
 }
 
 
+function alphaToString(alpha) {
+    if (alpha >= 1) {
+        return 'ff';
+    } else if (alpha <= 0) {
+        return '00';
+    } else {
+        return ("0" + Math.floor(256 * alpha).toString(16)).substr(-2);
+    }
+}
+
+
 /**
  * Things are the superclass of all objects that interact in the physics model (obstacles, platforms, players, hazards,
  * etc.)
@@ -51,7 +62,7 @@ class Thing {
 
     draw(ctx) {
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x - this.scene.scrollX, this.y - this.scene.scrollY, this.width, this.height);
+        ctx.fillRect(this.x, this.y, this.width, this.height);
     }
 
     update(deltaTime) {
@@ -94,7 +105,7 @@ class Actor extends Thing {
             let collisionSolid = undefined;
             if (move > 0) {
                 for (const solid of this.scene.solids) {
-                    if (solid.collidesWithMovingActor(this, move, 0)) {
+                    if (solid.isActive && solid.collidesWithMovingActor(this, move, 0)) {
                         if (solid.x - this.width < newX) {
                             newX = solid.x - this.width;
                             collisionSolid = solid;
@@ -103,7 +114,7 @@ class Actor extends Thing {
                 }
             } else {
                 for (const solid of this.scene.solids) {
-                    if (solid.collidesWithMovingActor(this, move, 0)) {
+                    if (solid.isActive && solid.collidesWithMovingActor(this, move, 0)) {
                         if (solid.x + solid.width > newX) {
                             newX = solid.x + solid.width;
                             collisionSolid = solid;
@@ -131,7 +142,7 @@ class Actor extends Thing {
             let collisionSolid = undefined;
             if (move > 0) {
                 for (const solid of this.scene.solids) {
-                    if (solid.collidesWithMovingActor(this, 0, move)) {
+                    if (solid.isActive && solid.collidesWithMovingActor(this, 0, move)) {
                         if (solid.y - this.height < newY) {
                             newY = solid.y - this.height;
                             collisionSolid = solid;
@@ -140,7 +151,7 @@ class Actor extends Thing {
                 }
             } else {
                 for (const solid of this.scene.solids) {
-                    if (solid.collidesWithMovingActor(this, 0, move)) {
+                    if (solid.isActive && solid.collidesWithMovingActor(this, 0, move)) {
                         if (solid.y + solid.height > newY) {
                             newY = solid.y + solid.height;
                             collisionSolid = solid;
@@ -206,7 +217,7 @@ class Solid extends Thing {
         if (moveX || moveY) {
             const riding = new Set();
             for (const actor of this.scene.actors) {
-                if (actor.isRiding(this)) {
+                if (actor.isActive && actor.isRiding(this)) {
                     riding.add(actor);
                 }
             }
@@ -218,26 +229,30 @@ class Solid extends Thing {
 
                 if (moveX > 0) {
                     for (const actor of this.scene.actors) {
-                        if (this.overlaps(actor)) {
-                            actor.movedX += actor.moveX(this.x + this.width - actor.x, () => actor.squish());
+                        if (actor.isActive) {
+                            if (this.overlaps(actor)) {
+                                actor.movedX += actor.moveX(this.x + this.width - actor.x, () => actor.squish());
 
-                        } else if (riding.has(actor)) {
-                            if (actor.movedX <= 0) {
-                                actor.movedX += actor.moveX(moveX);
-                            } else if (actor.movedX < moveX) {
-                                actor.movedX += actor.moveX(moveX - actor.movedX);
+                            } else if (riding.has(actor)) {
+                                if (actor.movedX <= 0) {
+                                    actor.movedX += actor.moveX(moveX);
+                                } else if (actor.movedX < moveX) {
+                                    actor.movedX += actor.moveX(moveX - actor.movedX);
+                                }
                             }
                         }
                     }
                 } else {
                     for (const actor of this.scene.actors) {
-                        if (this.overlaps(actor)) {
-                            actor.moveX(this.x - actor.x - actor.width, () => actor.squish());
-                        } else if (riding.has(actor)) {
-                            if (actor.movedX >= 0) {
-                                actor.movedX += actor.moveX(moveX);
-                            } else if (actor.movedX > moveX) {
-                                actor.movedX += actor.moveX(moveX - actor.movedX);
+                        if (actor.isActive) {
+                            if (this.overlaps(actor)) {
+                                actor.moveX(this.x - actor.x - actor.width, () => actor.squish());
+                            } else if (riding.has(actor)) {
+                                if (actor.movedX >= 0) {
+                                    actor.movedX += actor.moveX(moveX);
+                                } else if (actor.movedX > moveX) {
+                                    actor.movedX += actor.moveX(moveX - actor.movedX);
+                                }
                             }
                         }
                     }
@@ -249,25 +264,29 @@ class Solid extends Thing {
 
                 if (moveY > 0) {
                     for (const actor of this.scene.actors) {
-                        if (this.overlaps(actor)) {
-                            actor.moveY(this.y + this.height - actor.y, () => actor.squish());
-                        } else if (riding.has(actor)) {
-                            if (actor.movedY <= 0) {
-                                actor.movedY += actor.moveY(moveY);
-                            } else if (actor.movedY < moveY) {
-                                actor.movedY += actor.moveY(moveY - actor.movedY);
+                        if (actor.isActive) {
+                            if (this.overlaps(actor)) {
+                                actor.moveY(this.y + this.height - actor.y, () => actor.squish());
+                            } else if (riding.has(actor)) {
+                                if (actor.movedY <= 0) {
+                                    actor.movedY += actor.moveY(moveY);
+                                } else if (actor.movedY < moveY) {
+                                    actor.movedY += actor.moveY(moveY - actor.movedY);
+                                }
                             }
                         }
                     }
                 } else {
                     for (const actor of this.scene.actors) {
-                        if (this.overlaps(actor)) {
-                            actor.moveY(this.y - actor.y - actor.height, () => actor.squish());
-                        } else if (riding.has(actor)) {
-                            if (actor.movedY >= 0) {
-                                actor.movedY += actor.moveY(moveY);
-                            } else if (actor.movedY > moveY) {
-                                actor.movedY += actor.moveY(moveY - actor.movedY);
+                        if (actor.isActive) {
+                            if (this.overlaps(actor)) {
+                                actor.moveY(this.y - actor.y - actor.height, () => actor.squish());
+                            } else if (riding.has(actor)) {
+                                if (actor.movedY >= 0) {
+                                    actor.movedY += actor.moveY(moveY);
+                                } else if (actor.movedY > moveY) {
+                                    actor.movedY += actor.moveY(moveY - actor.movedY);
+                                }
                             }
                         }
                     }
@@ -367,7 +386,6 @@ class Spring extends Thing {
 class DashDiamond extends Thing {
     constructor(x, y) {
         super(x + .5 * U, y + .5 * U, U, U);
-        this.isActive = true;
         this.color = "#79ff00";
     }
 
@@ -379,8 +397,7 @@ class DashDiamond extends Thing {
     }
 
     interactWith(player) {
-        if (this.isActive) {
-            player.restoreDash();
+        if (player.restoreDash()) {
             this.isActive = false;
             this.timers.cooldown = 2;
         }
@@ -388,10 +405,10 @@ class DashDiamond extends Thing {
 
     draw(ctx) {
         ctx.strokeStyle = this.color;
-        ctx.strokeRect(this.x - this.scene.scrollX, this.y - this.scene.scrollY, this.width, this.height);
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
         if (this.isActive) {
             ctx.fillStyle = this.color;
-            ctx.fillRect(this.x - this.scene.scrollX, this.y - this.scene.scrollY, this.width, this.height);
+            ctx.fillRect(this.x, this.y, this.width, this.height);
         }
     }
 }
@@ -400,23 +417,20 @@ class DashDiamond extends Thing {
 class Strawberry extends Thing {
     constructor(x, y) {
         super(x + .5 * U, y + .5 * U, U, U);
-        this.isActive = true;
         this.color = "#ff009a";
     }
 
     interactWith(player) {
-        if (this.isActive) {
-            player.temporaryStrawberries.add(this);
-            this.isActive = false;
-        }
+        player.temporaryStrawberries.add(this);
+        this.isActive = false;
     }
 
     draw(ctx) {
         ctx.strokeStyle = this.color;
-        ctx.strokeRect(this.x - this.scene.scrollX, this.y - this.scene.scrollY, this.width, this.height);
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
         if (this.isActive) {
             ctx.fillStyle = this.color;
-            ctx.fillRect(this.x - this.scene.scrollX, this.y - this.scene.scrollY, this.width, this.height);
+            ctx.fillRect(this.x, this.y, this.width, this.height);
         }
     }
 }
@@ -439,26 +453,26 @@ class Transition extends Thing {
 }
 
 
-class FallingBlock extends Solid {
+class CrumblingBlock extends Solid {
     constructor(x, y, width, height) {
         super(x, y, width, height);
-        this.isActive = true;
         this.isFalling = false;
         this.timers.fall = 0;
         this.timers.cooldown = 0;
+        this.color = "#323232";
     }
 
     update(deltaTime) {
         super.update(deltaTime);
         if (this.isFalling) {
             if (this.timers.fall <= 0) {
+                this.isFalling = false;
                 this.isActive = false;
                 this.timers.cooldown = 4;
             }
         } else if (!this.isActive) {
             if (this.timers.cooldown <= 0) {
                 this.isActive = true;
-                this.isFalling = false;
             }
         } else {
             if (this.scene.player && this.scene.player.isRiding(this)) {
@@ -467,7 +481,21 @@ class FallingBlock extends Solid {
             }
         }
     }
+
+    draw(ctx) {
+        if (this.isActive) {
+            if (this.isFalling) {
+                const alpha = this.timers.fall;
+                ctx.fillStyle = this.color + alphaToString(alpha);
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            } else {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+    }
 }
+
 
 class TriggerBlock extends Solid {
     constructor(x, y, width, height, movement) {
@@ -494,6 +522,7 @@ class TriggerBlock extends Solid {
 
 module.exports = {
     segmentsOverlap,
+    alphaToString,
     Hazard,
     Solid,
     Actor,
@@ -503,4 +532,5 @@ module.exports = {
     Strawberry,
     Transition,
     TriggerBlock,
+    CrumblingBlock,
 }

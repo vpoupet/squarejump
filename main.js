@@ -17,11 +17,19 @@ let frameCounter = 0;
 let frameRateRefresh = 5;
 let frameRateStartTime = Date.now();
 let slowdownCounter = 0;
-
+let scrollX = 0;
+let scrollY = 0;
 
 function slowdown(factor) {
     SLOWDOWN_FACTOR = factor;
     lastUpdate = Date.now() / (SLOWDOWN_FACTOR * 1000);
+}
+
+
+function setScroll(x, y) {
+    context.translate(scrollX - x, scrollY - y);
+    scrollX = x;
+    scrollY = y;
 }
 
 
@@ -63,6 +71,7 @@ function update() {
                 currentScene = currentScene.transition.targetScene;
                 prevScene.transition = undefined;
             }
+            setScroll(currentScene.scrollX, currentScene.scrollY);
             currentScene.draw(context);
             lastUpdate = timeNow;
         }
