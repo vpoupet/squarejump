@@ -79,14 +79,6 @@ function update() {
     }
 }
 
-window.getKeyMap = function() {
-    return currentScene.player.inputs.keymap;
-}
-
-window.setKeyMap = function(d) {
-    currentScene.player.inputs.keymap = d;
-};
-
 window.onload = function () {
     document.addEventListener('keydown', e => {
         inputs.pressedKeys.add(e.key);
@@ -115,6 +107,8 @@ window.onload = function () {
     context.translate(0, -constants.VIEW_HEIGHT);
 
     currentScene = maps.CELESTE_01;
-    currentScene.setPlayer(new player.Player(currentScene.startPositionX, currentScene.startPositionY));
+    let p = new player.Player(currentScene.startPositionX, currentScene.startPositionY);
+    currentScene.setPlayer(p);
+    window.keymap = p.inputs.keymap;
     start();
 };
