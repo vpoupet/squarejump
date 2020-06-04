@@ -10,9 +10,9 @@ class Scene {
         this.height = height;
         this.scrollX = 0;
         this.scrollY = U / 2;
-        this.solids = [];
-        this.actors = [];
-        this.elements = [];
+        this.solids = new Set();
+        this.actors = new Set();
+        this.elements = new Set();
         this.transition = undefined;
 
         if (startPositionX !== undefined && startPositionY !== undefined) {
@@ -72,9 +72,15 @@ class Scene {
     }
 
     update(deltaTime) {
-        this.solids.map(x => x.update(deltaTime));
-        this.elements.map(x => x.update(deltaTime));
-        this.actors.map(x => x.update(deltaTime));
+        for (const solid of this.solids) {
+            solid.update(deltaTime);
+        }
+        for (const element of this.elements) {
+            element.update(deltaTime);
+        }
+        for (const actor of this.actors) {
+            actor.update(deltaTime);
+        }
         // scroll view
         if (this.player) {
             if (this.player.x - this.scrollX > .60 * constants.VIEW_WIDTH) {
@@ -91,38 +97,51 @@ class Scene {
     }
 
     draw(ctx) {
-        this.solids.map(x => x.draw(ctx));
-        this.elements.map(x => x.draw(ctx));
-        this.actors.map(x => x.draw(ctx));
+        for (const solid of this.solids) {
+            solid.draw(ctx);
+        }
+        for (const element of this.elements) {
+            element.draw(ctx);
+        }
+        for (const actor of this.actors) {
+            actor.draw(ctx);
+        }
     }
 
     setPlayer(player) {
-        if (this.player) {
-            this.player.scene = undefined;
-            const index = this.actors.indexOf(this.player);
-            if (index !== -1) {
-                this.actors.splice(index, 1);
-            }
-        }
-        if (player) {
-            this.addActor(player);
-        }
+        if (this.player) this.removeActor(this.player);
+        if (player) this.addActor(player);
         this.player = player;
     }
 
     addActor(actor) {
-        this.actors.push(actor);
+        this.actors.add(actor);
         actor.scene = this;
     }
 
+    removeActor(actor) {
+        this.actors.delete(actor);
+        actor.scene = undefined;
+    }
+
     addSolid(solid) {
-        this.solids.push(solid);
+        this.solids.add(solid);
         solid.scene = this;
     }
 
+    removeSolid(solid) {
+        this.solids.remove(solid);
+        solid.scene = undefined;
+    }
+
     addElement(element) {
-        this.elements.push(element);
+        this.elements.add(element);
         element.scene = this;
+    }
+
+    removeElement(element) {
+        this.elements.delete(element);
+        element.scene = undefined;
     }
 }
 

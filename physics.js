@@ -39,6 +39,7 @@ class Thing {
         this.movement = undefined;
         this.scene = undefined;
         this.timers = {};
+        this.isActive = true;
     }
 
     overlaps(other) {
@@ -203,7 +204,12 @@ class Solid extends Thing {
         const moveY = Math.round(this.yRemainder);
 
         if (moveX || moveY) {
-            const riding = this.scene.actors.filter(x => (x.isRiding(this)));
+            const riding = new Set();
+            for (const actor of this.scene.actors) {
+                if (actor.isRiding(this)) {
+                    riding.add(actor);
+                }
+            }
             this.collidable = false;
 
             if (moveX) {
@@ -215,7 +221,7 @@ class Solid extends Thing {
                         if (this.overlaps(actor)) {
                             actor.movedX += actor.moveX(this.x + this.width - actor.x, () => actor.squish());
 
-                        } else if (riding.includes(actor)) {
+                        } else if (riding.has(actor)) {
                             if (actor.movedX <= 0) {
                                 actor.movedX += actor.moveX(moveX);
                             } else if (actor.movedX < moveX) {
@@ -227,7 +233,7 @@ class Solid extends Thing {
                     for (const actor of this.scene.actors) {
                         if (this.overlaps(actor)) {
                             actor.moveX(this.x - actor.x - actor.width, () => actor.squish());
-                        } else if (riding.includes(actor)) {
+                        } else if (riding.has(actor)) {
                             if (actor.movedX >= 0) {
                                 actor.movedX += actor.moveX(moveX);
                             } else if (actor.movedX > moveX) {
@@ -245,7 +251,7 @@ class Solid extends Thing {
                     for (const actor of this.scene.actors) {
                         if (this.overlaps(actor)) {
                             actor.moveY(this.y + this.height - actor.y, () => actor.squish());
-                        } else if (riding.includes(actor)) {
+                        } else if (riding.has(actor)) {
                             if (actor.movedY <= 0) {
                                 actor.movedY += actor.moveY(moveY);
                             } else if (actor.movedY < moveY) {
@@ -257,7 +263,7 @@ class Solid extends Thing {
                     for (const actor of this.scene.actors) {
                         if (this.overlaps(actor)) {
                             actor.moveY(this.y - actor.y - actor.height, () => actor.squish());
-                        } else if (riding.includes(actor)) {
+                        } else if (riding.has(actor)) {
                             if (actor.movedY >= 0) {
                                 actor.movedY += actor.moveY(moveY);
                             } else if (actor.movedY > moveY) {
@@ -400,7 +406,7 @@ class Strawberry extends Thing {
 
     interactWith(player) {
         if (this.isActive) {
-            player.temporaryStrawberries.push(this);
+            player.temporaryStrawberries.add(this);
             this.isActive = false;
         }
     }
@@ -432,6 +438,36 @@ class Transition extends Thing {
     }
 }
 
+
+class FallingBlock extends Solid {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        this.isActive = true;
+        this.isFalling = false;
+        this.timers.fall = 0;
+        this.timers.cooldown = 0;
+    }
+
+    update(deltaTime) {
+        super.update(deltaTime);
+        if (this.isFalling) {
+            if (this.timers.fall <= 0) {
+                this.isActive = false;
+                this.timers.cooldown = 4;
+            }
+        } else if (!this.isActive) {
+            if (this.timers.cooldown <= 0) {
+                this.isActive = true;
+                this.isFalling = false;
+            }
+        } else {
+            if (this.scene.player && this.scene.player.isRiding(this)) {
+                this.isFalling = true;
+                this.timers.fall = 1;
+            }
+        }
+    }
+}
 
 class TriggerBlock extends Solid {
     constructor(x, y, width, height, movement) {

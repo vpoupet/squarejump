@@ -18,9 +18,9 @@ class Player extends physics.Actor {
         this.isHuggingWall = false;
         this.hasWallLeft = false;
         this.hasWallRight = false;
-        this.carryingSolids = [];
-        this.temporaryStrawberries = [];
-        this.strawberries = [];
+        this.carryingSolids = new Set();
+        this.temporaryStrawberries = new Set();
+        this.strawberries = new Set();
 
         this.state = constants.STATE_NORMAL;
         // timers
@@ -42,11 +42,11 @@ class Player extends physics.Actor {
         this.isHuggingWall = false;
         this.hasWallLeft = false;
         this.hasWallRight = false;
-        while (this.carryingSolids.length) this.carryingSolids.pop();
+        this.carryingSolids.clear();
         for (const solid of this.scene.solids) {
             if (this.y === solid.y + solid.height && physics.segmentsOverlap(this.x, this.width, solid.x, solid.width)) {
                 // player is standing on a solid
-                this.carryingSolids.push(solid);
+                this.carryingSolids.add(solid);
                 this.isGrounded = true;
             }
             if (physics.segmentsOverlap(this.y, this.height, solid.y, solid.height)) {
@@ -63,7 +63,7 @@ class Player extends physics.Actor {
                 if ((this.inputs.xAxis === 1 && this.x + this.width === solid.x) ||
                     (this.inputs.xAxis === -1 && this.x === solid.x + solid.width)) {
                     // check if player is hugging a wall
-                    this.carryingSolids.push(solid);
+                    this.carryingSolids.add(solid);
                     this.isHuggingWall = true;
                 }
             }
@@ -288,22 +288,21 @@ class Player extends physics.Actor {
 
     transitionScene(targetScene) {
         // validate temporary strawberries
-        while (this.temporaryStrawberries.length) {
-            const strawberry = this.temporaryStrawberries.pop();
-            const index = strawberry.scene.elements.indexOf(strawberry);
-            strawberry.scene.elements.splice(index, 1);
-            this.strawberries.push(strawberry);
+        for (const strawberry of this.temporaryStrawberries) {
+            strawberry.scene.removeElement(strawberry);
+            this.strawberries.add(strawberry);
         }
+        this.temporaryStrawberries.clear();
         this.scene.setPlayer(undefined);
         targetScene.setPlayer(this);
     }
 
     die() {
         // reactivate temporary strawberries
-        while (this.temporaryStrawberries.length) {
-            const strawberry = this.temporaryStrawberries.pop();
+        for (const strawberry of this.temporaryStrawberries) {
             strawberry.isActive = true;
         }
+        this.temporaryStrawberries.clear();
         this.setState(constants.STATE_DEAD);
     }
 
