@@ -3,8 +3,10 @@ const constants = require('./constants');
 const maps = require('./maps');
 const inputs = require('./inputs');
 const player = require('./player');
+const tiles = require('./tiles');
+const sprites = require('./sprites');
 
-const SCALING = 2;
+const SCALING = 4;
 let SLOWDOWN_FACTOR = 1;
 const FIXED_DELTA_TIME = true;
 const FRAME_RATE = 60;
@@ -19,6 +21,7 @@ let frameRateStartTime = Date.now();
 let slowdownCounter = 0;
 let scrollX = 0;
 let scrollY = 0;
+
 
 function slowdown(factor) {
     SLOWDOWN_FACTOR = factor;
@@ -62,9 +65,9 @@ function update() {
                 1 / FRAME_RATE :
                 Math.min((timeNow - lastUpdate) / (1000 * SLOWDOWN_FACTOR), .05);
 
-            context.fillStyle = '#ffffff';  // background color
-            context.fillRect(0, 0, SCALING * constants.VIEW_WIDTH, SCALING * constants.VIEW_HEIGHT);
+            context.clearRect(0, 0, SCALING * constants.VIEW_WIDTH, SCALING * constants.VIEW_HEIGHT);
             currentScene.update(deltaTime);
+
             // Transition from one room to another
             if (currentScene.transition) {
                 const prevScene = currentScene;
@@ -105,6 +108,7 @@ window.onload = function () {
     canvas.height = SCALING * constants.VIEW_HEIGHT;
     context.scale(SCALING, -SCALING);
     context.translate(0, -constants.VIEW_HEIGHT);
+    context.imageSmoothingEnabled = false;
 
     currentScene = maps.CELESTE_01;
     let p = new player.Player(currentScene.startPositionX, currentScene.startPositionY);
@@ -112,3 +116,16 @@ window.onload = function () {
     window.keymap = p.inputs.keymap;
     start();
 };
+
+// Gamepad API
+window.addEventListener("gamepadconnected", (event) => {
+    console.log("A gamepad connected:");
+    console.log(event.gamepad);
+    inputs.gamepadPressedButtons[event.gamepad.index] = new Set();
+});
+
+window.addEventListener("gamepaddisconnected", (event) => {
+    console.log("A gamepad disconnected:");
+    console.log(event.gamepad);
+    inputs.gamepadPressedButtons[event.gamepad.index] = undefined;
+});

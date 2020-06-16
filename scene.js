@@ -3,9 +3,8 @@ const physics = require('./physics');
 const constants = require('./constants');
 const U = constants.GRID_SIZE;
 
-
 class Scene {
-    constructor(width, height, startPositionX = undefined, startPositionY = undefined) {
+    constructor(width, height) {
         this.width = width;
         this.height = height;
         this.scrollX = 0;
@@ -14,17 +13,9 @@ class Scene {
         this.actors = new Set();
         this.elements = new Set();
         this.transition = undefined;
-
-        if (startPositionX !== undefined && startPositionY !== undefined) {
-            this.player = new physics.Player(startPositionX, startPositionY);
-            this.startPositionX = startPositionX;
-            this.startPositionY = startPositionY;
-            this.addActor(this.player);
-        } else {
-            this.startPositionX = undefined;
-            this.startPositionY = undefined;
-            this.player = undefined;
-        }
+        this.player = undefined;
+        this.startPositionX = undefined;
+        this.startPositionY = undefined;
     }
 
     setStartPosition(x, y) {
@@ -68,6 +59,58 @@ class Scene {
                         break;
                     default:
                         break;
+                }
+            }
+        }
+        return scene;
+    }
+
+    static fromJSON(data) {
+        const scene = new Scene(data.width * U, data.height * U);
+        const mainLayer = data.layers.find(l => l.name === 'main');
+        for (let i = 0; i < mainLayer.data.length; i++) {
+            const v = mainLayer.data[i] & 0x0FFFFFFF;
+            const f = (mainLayer.data[i] >> 28) & 0xF;
+            if (v !== 0) {
+                const x = (i % mainLayer.width) * U;
+                const y = (mainLayer.height - ~~(i / mainLayer.width) - 1) * U;
+                let rotation;
+                switch(f) {
+                    case 0b0000:
+                        rotation = 0;
+                        break;
+                    case 0b1010:
+                        rotation = 1;
+                        break;
+                    case 0b1100:
+                        rotation = 2;
+                        break;
+                    case 0b0110:
+                        rotation = 3;
+                        break;
+                    default:
+                        rotation = -1;
+                }
+                const tileData = {
+                    'set': 'forest',
+                    'index': v & 0x00FFFFFF,
+                    'rotation': rotation,
+                }
+
+                switch(v) {
+                    case 38:
+                    case 39:
+                    case 40:
+                    case 46:
+                    case 47:
+                    case 48:
+                        scene.addSolid(new physics.Platform(x, y, U, tileData));
+                        break;
+                    case 73:
+                        scene.addElement(new physics.Hazard(x, y, U, U, tileData));
+                        break;
+                    default:
+                        scene.addSolid(new physics.Solid(x, y, U, U, tileData));
                 }
             }
         }

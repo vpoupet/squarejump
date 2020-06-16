@@ -1,5 +1,6 @@
 "use strict";
 const constants = require('./constants');
+const tiles = require('./tiles');
 const U = constants.GRID_SIZE;
 
 
@@ -39,13 +40,14 @@ function alphaToString(alpha) {
  * value < 1)
  */
 class Thing {
-    constructor(x, y, width, height) {
+    constructor(x, y, width, height, tileData = undefined) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.xRemainder = 0;
         this.yRemainder = 0;
+        this.tileData = tileData;
         this.color = '#000000';
         this.movement = undefined;
         this.scene = undefined;
@@ -61,8 +63,17 @@ class Thing {
     }
 
     draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (this.tileData !== undefined) {
+            ctx.drawImage(
+                tiles.tilesSheet.canvas,
+                tiles.tilesSheet.offsets[this.tileData.set] + 16 * (this.tileData.index - 1), 16 * this.tileData.rotation,
+                16, 16,
+                this.x, this.y,
+                8, 8);
+        } else {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
     }
 
     update(deltaTime) {
@@ -185,8 +196,8 @@ class Actor extends Thing {
 
 
 class Solid extends Thing {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(x, y, width, height, tileData = undefined) {
+        super(x, y, width, height, tileData);
         this.collidable = true;
         this.color = '#6c2c0b';
         this.momentumX = 0;
@@ -326,8 +337,8 @@ class Solid extends Thing {
 
 
 class Hazard extends Thing {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(x, y, width, height, tileData = undefined) {
+        super(x, y, width, height, tileData);
         this.collidable = true;
         this.color = '#f31314';
     }
@@ -351,8 +362,8 @@ class Hazard extends Thing {
 
 
 class Platform extends Solid {
-    constructor(x, y, width) {
-        super(x, y + U / 2, width, U / 2);
+    constructor(x, y, width, tileData) {
+        super(x, y + U / 2, width, U / 2, tileData);
         this.color = "#a8612a";
     }
 
@@ -364,6 +375,19 @@ class Platform extends Solid {
                 actor.y + dy < this.y + this.height;
         }
         return false;
+    }
+
+    draw(ctx) {
+        if (this.tileData !== undefined) {
+            ctx.drawImage(
+                tiles.tilesSheet.canvas,
+                tiles.tilesSheet.offsets[this.tileData.set] + 16 * (this.tileData.index - 1), 16 * this.tileData.rotation,
+                16, 16,
+                this.x, this.y - this.height,
+                8, 8);
+        } else {
+            super.draw(ctx);
+        }
     }
 }
 

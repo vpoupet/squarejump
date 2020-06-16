@@ -7,77 +7,157 @@ const U = constants.GRID_SIZE;
 
 
 function makeTransitionUp(scene1, x1, y1, scene2, x2, y2, width) {
-    const transitionUp = new physics.Transition(
+    scene1.addElement(new physics.Transition(
         x1 * U, (y1 + 1) * U, width * U, 0, scene2, x2 * U, (y2 + 3) * U
-    );
-    transitionUp.boostY = constants.TRANSION_BOOST_UP;
-    scene1.addElement(transitionUp);
+    ));
     scene2.addElement(new physics.Transition(
         x2 * U, (y2 - 1) * U, width * U, 0, scene1, x1 * U, (y1 - 3) * U
-    ))
+    ));
 }
 
 function makeTransitionRight(scene1, x1, y1, scene2, x2, y2, height) {
     scene1.addElement(new physics.Transition(
         x1 * U, y1 * U, 0, height * U, scene2, (x2 + 1) * U, y2 * U
-    ))
+    ));
     scene2.addElement(new physics.Transition(
         x2 * U, y2 * U, 0, height * U, scene1, (x1 - 1) * U, y1 * U
-    ))
+    ));
 }
 
 
-const CELESTE_01 = scene.Scene.fromString(`\
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx     xxxx
-xx  x xxx    xxxxxxxxx              xxxx
-xx  x   x    xxxxx   x             xxxxx
-xx  xxx x    xxx     x             xxxxx
-xx  x   x    xxx                  xxxxxx
-xx  x   x    xxx                   xxxxx
-xx  xxxxx                          xxxxx
-xx                             xxxxxxxxx
-xx                             xxxxxxxxx
-x                              xxxxxxxxx
-x                 xxxx           !xxxxxx
-x                 x  x           !xxxxxx
-x                 x  x              xxxx
-x                 xxxx              xxxx
-x                 xxxx              xxxx
-x                 xxxx!!!!          xxxx
-x         xxx     xxxxxxxx           xxx
-x  P      xxx     xxxxxxxx           xxx
-xxxxx     xxx!!!!!xxxxxxxx            xx
-xxxxx     xxxxxxxxxxxxxxxx!!!          x
-xxxxx!!!!!xxxxxxxxxxxxxxxxxxx          x
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx          x
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx          x`);
+// const CELESTE_01 = scene.Scene.fromString(`\
+// xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx     xxxx
+// xx  x xxx    xxxxxxxxx              xxxx
+// xx  x   x    xxxxx   x             xxxxx
+// xx  xxx x    xxx     x             xxxxx
+// xx  x   x    xxx                  xxxxxx
+// xx  x   x    xxx                   xxxxx
+// xx  xxxxx                          xxxxx
+// xx                             xxxxxxxxx
+// xx                             xxxxxxxxx
+// x                              xxxxxxxxx
+// x                 xxxx           !xxxxxx
+// x                 x  x           !xxxxxx
+// x                 x  x              xxxx
+// x                 xxxx              xxxx
+// x                 xxxx              xxxx
+// x                 xxxx!!!!          xxxx
+// x         xxx     xxxxxxxx           xxx
+// x  P      xxx     xxxxxxxx           xxx
+// xxxxx     xxx!!!!!xxxxxxxx            xx
+// xxxxx     xxxxxxxxxxxxxxxx!!!          x
+// xxxxx!!!!!xxxxxxxxxxxxxxxxxxx          x
+// xxxxxxxxxxxxxxxxxxxxxxxxxxxxx          x
+// xxxxxxxxxxxxxxxxxxxxxxxxxxxxx          x`);
 
+const CELESTE_01 = scene.Scene.fromJSON({ "compressionlevel":-1,
+    "editorsettings":
+        {
+            "export":
+                {
+                    "format":"json",
+                    "target":"celeste01.json"
+                }
+        },
+    "height":23,
+    "infinite":false,
+    "layers":[
+        {
+            "data":[10, 12, 18, 18, 13, 10, 10, 10, 12, 18, 18, 18, 18, 13, 10, 10, 10, 10, 10, 10, 10, 12, 18, 18, 18, 18, 18, 18, 3221225477, 3221225477, 3221225476, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 11, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 10, 10, 12, 18, 18, 18, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 11, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 12, 18, 3221225476, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 10, 10, 10, 10, 11, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 3221225476, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 11, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 10, 10, 10, 10, 10, 11, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 3221225478, 3221225477, 3221225476, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 11, 0, 0, 3221225478, 3221225477, 3221225477, 3221225477, 3221225476, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 10, 10, 10, 10, 12, 3221225476, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3221225478, 18, 18, 13, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1610612809, 9, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1610612809, 3221225478, 3221225477, 13, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 11, 73, 73, 73, 73, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3221225478, 13, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 2, 3, 0, 0, 0, 0, 0, 9, 10, 10, 20, 5, 5, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3221225478, 13, 10, 20, 2, 2, 2, 3, 0, 0, 0, 0, 0, 9, 10, 11, 73, 73, 73, 73, 73, 9, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3221225478, 13, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 9, 10, 20, 5, 5, 5, 5, 5, 21, 10, 10, 10, 10, 10, 10, 11, 73, 73, 73, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 11, 73, 73, 73, 73, 73, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 20, 5, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 20, 5, 5, 5, 5, 5, 21, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9],
+            "height":23,
+            "id":1,
+            "name":"main",
+            "opacity":1,
+            "type":"tilelayer",
+            "visible":true,
+            "width":40,
+            "x":0,
+            "y":0
+        }],
+    "nextlayerid":8,
+    "nextobjectid":1,
+    "orientation":"orthogonal",
+    "renderorder":"right-down",
+    "tiledversion":"1.3.5",
+    "tileheight":16,
+    "tilesets":[
+        {
+            "firstgid":1,
+            "source":"forest.tsx"
+        }],
+    "tilewidth":16,
+    "type":"map",
+    "version":1.2,
+    "width":40
+});
+CELESTE_01.setStartPosition(3 * U, 5 * U);
 
-const CELESTE_02 = scene.Scene.fromString(`\
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    xx
-xxx     xx    x xxxxxxxxxxxxxxxxxx    xx
-xxx     xx    x     xxxxx  xxxxxxx    xx
-xxxxxxxxxx    x     xxxxx    xxxxx    xx
-xxx     x     x     xxxxx    xxxxx    xx
-xxxxxxxxx  S         xxxx    xxxxx    xx
-xxx     x            xxx        xx    xx
-xxxxxxxxx            xxx        xx    xx
-xx                   xxx        xx    xx
-xx                              xx    xx
-xx                               x    xx
-xx                               x    xx
-x                                     xx
-x                   !!!!!             xx
-x                   xxxxx             xx
-x                   xxxxx       xxxxxxxx
-x                   xxxx        xxxxxxxx
-x             B      xxx        xxxxxxxx
-x             xx     xxx    xxxxxxxxxxxx
-x  P          xx     xxx!!  xxxxxxxxxxxx
-x-----xxxxxxxxxx     xxxxx!!xxxxxxxxxxxx
-x     xxxxxx  xx     xxxxxxxxxxxxxxxxxxx
-x     xxxxxx  xx     xxxxxxxxxxxxxxxxxxx`);
+// const CELESTE_02 = scene.Scene.fromString(`\
+// xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    xx
+// xxx     xx    x xxxxxxxxxxxxxxxxxx    xx
+// xxx     xx    x     xxxxx  xxxxxxx    xx
+// xxxxxxxxxx    x     xxxxx    xxxxx    xx
+// xxx     x     x     xxxxx    xxxxx    xx
+// xxxxxxxxx  S         xxxx    xxxxx    xx
+// xxx     x            xxx        xx    xx
+// xxxxxxxxx            xxx        xx    xx
+// xx                   xxx        xx    xx
+// xx                              xx    xx
+// xx                               x    xx
+// xx                               x    xx
+// x                                     xx
+// x                   !!!!!             xx
+// x                   xxxxx             xx
+// x                   xxxxx       xxxxxxxx
+// x                   xxxx        xxxxxxxx
+// x             B      xxx        xxxxxxxx
+// x             xx     xxx    xxxxxxxxxxxx
+// x  P          xx     xxx!!  xxxxxxxxxxxx
+// x-----xxxxxxxxxx     xxxxx!!xxxxxxxxxxxx
+// x     xxxxxx  xx     xxxxxxxxxxxxxxxxxxx
+// x     xxxxxx  xx     xxxxxxxxxxxxxxxxxxx`);
 
+const CELESTE_02 = scene.Scene.fromJSON({ "compressionlevel":-1,
+    "editorsettings":
+        {
+            "export":
+                {
+                    "format":"json",
+                    "target":"celeste02.json"
+                }
+        },
+    "height":23,
+    "infinite":false,
+    "layers":[
+        {
+            "data":[10, 10, 10, 10, 10, 10, 10, 10, 10, 12, 18, 18, 18, 18, 12, 18, 13, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 11, 0, 17, 18, 18, 18, 13, 10, 10, 10, 12, 18, 18, 13, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 9, 10, 10, 10, 11, 0, 0, 17, 18, 13, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 12, 19, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 3221225476, 0, 0, 0, 0, 0, 17, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 10, 10, 11, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 19, 0, 0, 0, 0, 17, 18, 18, 13, 11, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 9, 11, 0, 0, 0, 0, 9, 10, 10, 12, 18, 18, 18, 18, 18, 18, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 9, 11, 0, 0, 0, 0, 9, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 18, 19, 0, 0, 0, 0, 0, 0, 0, 0, 9, 11, 0, 0, 0, 0, 9, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 11, 0, 0, 0, 0, 9, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 9, 10, 12, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3221225476, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 73, 73, 73, 73, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 5, 5, 5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 12, 19, 0, 0, 0, 0, 0, 0, 0, 4, 5, 5, 5, 5, 5, 21, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17, 13, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 0, 0, 0, 0, 9, 10, 11, 0, 0, 0, 0, 1, 2, 2, 2, 21, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 11, 0, 0, 0, 0, 0, 9, 10, 11, 73, 73, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 46, 47, 47, 47, 48, 1, 2, 2, 2, 5, 6, 16, 16, 9, 11, 0, 0, 0, 0, 0, 9, 10, 20, 5, 6, 73, 73, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 11, 0, 0, 9, 11, 0, 0, 0, 0, 0, 9, 10, 10, 10, 20, 5, 5, 21, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 11, 0, 0, 9, 11, 0, 0, 0, 0, 0, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+            "height":23,
+            "id":1,
+            "name":"main",
+            "opacity":1,
+            "type":"tilelayer",
+            "visible":true,
+            "width":40,
+            "x":0,
+            "y":0
+        }],
+    "nextlayerid":2,
+    "nextobjectid":1,
+    "orientation":"orthogonal",
+    "renderorder":"right-down",
+    "tiledversion":"1.3.5",
+    "tileheight":16,
+    "tilesets":[
+        {
+            "firstgid":1,
+            "source":"forest.tsx"
+        }],
+    "tilewidth":16,
+    "type":"map",
+    "version":1.2,
+    "width":40
+});
+CELESTE_02.setStartPosition(3 * U, 3 * U);
 makeTransitionUp(CELESTE_01, 31, 23, CELESTE_02, 1, 0, 5);
 
 

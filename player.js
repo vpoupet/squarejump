@@ -2,7 +2,14 @@
 const inputs = require('./inputs');
 const physics = require('./physics');
 const constants = require('./constants');
+const sprites = require('./sprites');
+const ANIMATION_SLOWDOWN = 6;
 
+const ANIMATION_IDLE = [4, 4];
+const ANIMATION_RUN = [1, 6];
+const ANIMATION_JUMP = [6, 3];
+const ANIMATION_FALL = [5, 3];
+const ANIMATION_DIE = [0, 8];
 
 class Player extends physics.Actor {
     constructor(x, y) {
@@ -23,6 +30,11 @@ class Player extends physics.Actor {
         this.strawberries = new Set();
 
         this.state = constants.STATE_NORMAL;
+        this.sprite_direction = 1;
+        this.sprite_row = 1;
+        this.nb_sprites = 4;
+        this.animation_counter = 0;
+
         // timers
         this.timers.jumpGrace = 0;
         this.timers.dashCooldown = 0;
@@ -33,9 +45,22 @@ class Player extends physics.Actor {
         this.timers.bounce = 0;
     }
 
+    draw(ctx) {
+        const index = ~~(this.animation_counter / ANIMATION_SLOWDOWN);
+        const row = 2 * this.sprite_row + (this.sprite_direction === -1 ? 1 : 0);
+        ctx.drawImage(
+            sprites.spritesSheet.canvas,
+            16 * index, 16 * row,
+            16, 16,
+            this.x - 4, this.y,
+            16, 16);
+    }
+
     update(deltaTime) {
         super.update(deltaTime);
         this.inputs.update(deltaTime);
+        this.animation_counter += 1;
+        this.animation_counter %= this.nb_sprites * ANIMATION_SLOWDOWN;
 
         // check environment
         this.isGrounded = false;
@@ -79,6 +104,7 @@ class Player extends physics.Actor {
         }
 
         this.updateMovement(deltaTime);
+        this.updateAnimation();
 
         this.moveX(this.speedX * deltaTime, () => this.speedX = 0);
         this.moveY(this.speedY * deltaTime, () => this.speedY = 0);
@@ -208,6 +234,8 @@ class Player extends physics.Actor {
     }
 
     updateHorizontalMovement(deltaTime) {
+        if (this.inputs.xAxis !== 0) this.sprite_direction = this.inputs.xAxis;
+
         // horizontal movement
         let sx = Math.abs(this.speedX);        // absolute value of the horizontal speed of the player
         const dx = this.speedX >= 0 ? 1 : -1;    // direction in which the player is moving
@@ -234,10 +262,8 @@ class Player extends physics.Actor {
             if (this.isHuggingWall) {
                 if (this.inputs.yAxis === 1) {
                     this.speedY = constants.CLIMB_UP_SPEED;
-                } else if (this.inputs.yAxis === -1) {
-                    this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.CLIMB_SLIP_SPEED);
                 } else {
-                    this.speedY = 0;
+                    this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.CLIMB_SLIP_SPEED);
                 }
             } else {
                 this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.MAX_FALL_SPEED);
@@ -245,6 +271,27 @@ class Player extends physics.Actor {
         }
     }
 
+    updateAnimation() {
+        if (this.state === constants.STATE_DEAD) {
+
+        } else {
+            if (this.isGrounded) {
+                if (this.inputs.xAxis !== 0) {
+                    this.setAnimation(...ANIMATION_RUN);
+                } else {
+                    this.setAnimation(...ANIMATION_IDLE);
+                }
+            } else if (this.isHuggingWall) {
+                this.setAnimation(...ANIMATION_IDLE);
+            } else {
+                if (this.speedY > 0) {
+                    this.setAnimation(...ANIMATION_JUMP);
+                } else {
+                    this.setAnimation(...ANIMATION_FALL);
+                }
+            }
+        }
+    }
     setState(newState) {
         if (newState !== this.state) {
             switch (this.state) {
@@ -305,6 +352,7 @@ class Player extends physics.Actor {
         }
         this.temporaryStrawberries.clear();
         this.setState(constants.STATE_DEAD);
+        this.setAnimation(...ANIMATION_DIE);
     }
 
     respawn() {
@@ -345,6 +393,14 @@ class Player extends physics.Actor {
                     (this.inputs.xAxis === 1 && solid.x === this.x + this.width)
                 )
             );
+    }
+
+    setAnimation(sprite_row, nb_sprites) {
+        if (sprite_row !== this.sprite_row) {
+            this.sprite_row = sprite_row;
+            this.animation_counter = 0;
+            this.nb_sprites = nb_sprites;
+        }
     }
 }
 
