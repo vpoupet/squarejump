@@ -56,7 +56,7 @@ const loadScenes = new Promise(resolve => {
             "CELESTE_11",
             "CELESTE_12",
             "CELESTE_13",
-            // "CELESTE_14",
+            "CELESTE_14",
             "LOUIS_01",
             "LOUIS_02",
             "LOUIS_03",
@@ -86,19 +86,19 @@ const loadScenes = new Promise(resolve => {
             new movement.LinearMovement(21 * U, 12 * U, 14 * U, 16 * U, 2),
         ])));
 
-        // scenes.CELESTE_14.addSolid(new physics.TriggerBlock(11 * U, 29 * U, 4 * U, 2 * U, new movement.SequenceMovement([
-        //     new movement.Movement(.75),
-        //     new movement.LinearMovement(11 * U, 29 * U, 19 * U, 29 * U, .35),
-        //     new movement.Movement(1),
-        //     new movement.LinearMovement(19 * U, 29 * U, 11 * U, 29 * U, 1.5),
-        // ])));
-        //
-        // scenes.CELESTE_14.addSolid(new physics.TriggerBlock(26 * U, 28 * U, 5 * U, 2 * U, new movement.SequenceMovement([
-        //     new movement.Movement(.75),
-        //     new movement.LinearMovement(26 * U, 28 * U, 26 * U, 22 * U, .35),
-        //     new movement.Movement(1),
-        //     new movement.LinearMovement(26 * U, 22 * U, 26 * U, 28 * U, 1.5),
-        // ])));
+        scenes.CELESTE_14.addSolid(new physics.TriggerBlock(11 * U, 29 * U, 4 * U, 2 * U, new movement.SequenceMovement([
+            new movement.Movement(.75),
+            new movement.LinearMovement(11 * U, 29 * U, 19 * U, 29 * U, .35),
+            new movement.Movement(1),
+            new movement.LinearMovement(19 * U, 29 * U, 11 * U, 29 * U, 1.5),
+        ])));
+
+        scenes.CELESTE_14.addSolid(new physics.TriggerBlock(26 * U, 28 * U, 5 * U, 2 * U, new movement.SequenceMovement([
+            new movement.Movement(.75),
+            new movement.LinearMovement(26 * U, 28 * U, 26 * U, 22 * U, .35),
+            new movement.Movement(1),
+            new movement.LinearMovement(26 * U, 22 * U, 26 * U, 28 * U, 1.5),
+        ])));
 
         makeTransitionUp(scenes.CELESTE_01, 31, 0, scenes.CELESTE_02, 1, 1, 5);
         makeTransitionUp(scenes.CELESTE_02, 34, 0, scenes.CELESTE_03, 2, 1, 4);
@@ -113,7 +113,7 @@ const loadScenes = new Promise(resolve => {
         makeTransitionUp(scenes.CELESTE_10, 2, 1, scenes.CELESTE_12, 42, 1, 3);
         makeTransitionUp(scenes.CELESTE_11, 3, 0, scenes.CELESTE_12, 3, 0, 2);
         makeTransitionRight(scenes.CELESTE_09, 0, 0, scenes.CELESTE_13, 0, 0, 10);
-        // makeTransitionRight(scenes.CELESTE_13, 0, 1, scenes.CELESTE_14, 22, 2, 10);
+        makeTransitionRight(scenes.CELESTE_13, 0, 1, scenes.CELESTE_14, 22, 2, 10);
 
 
         makeTransitionUp(scenes.LOUIS_01, 35, 0, scenes.LOUIS_02, 4, 1, 3);
