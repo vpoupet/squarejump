@@ -532,7 +532,7 @@ class TriggerBlock extends Solid {
     constructor(x, y, width, height, movement) {
         super(x, y, width, height);
         this.triggeredMovement = movement;
-        this.color = "#3b3b3b";
+        this.spriteIndexes = new Array((width / U) * (height / U)).fill(0).map(_ => Math.floor(Math.random() * 3));
     }
 
     update(deltaTime) {
@@ -545,6 +545,21 @@ class TriggerBlock extends Solid {
             if (this.movement === undefined && player.isRiding(this)) {
                 this.movement = this.triggeredMovement;
                 this.movement.reset();
+            }
+        }
+    }
+
+    draw(ctx) {
+        let index = 0;
+        for (let x = this.x; x < this.x + this.width; x += U) {
+            for (let y = this.y; y < this.y + this.height; y += U) {
+                ctx.drawImage(
+                    tileset,
+                    16 * this.spriteIndexes[index], 16 * 8,
+                    16, 16,
+                    x, y,
+                    8, 8);
+                index += 1;
             }
         }
     }

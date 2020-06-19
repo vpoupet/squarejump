@@ -7,6 +7,7 @@
   top: 0;
   left: 0;
   background: linear-gradient(0deg, #585858, #FFFFFF44), url(images/forest.png);
+  background-size: cover;
 }
 
 /*# sourceMappingURL=style.css.map */
