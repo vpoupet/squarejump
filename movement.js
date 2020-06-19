@@ -75,8 +75,7 @@ class SequenceMovement extends Movement {
 }
 
 
-class SineMovement
-    extends Movement {
+class SineMovement extends Movement {
     constructor(x1, y1, x2, y2, duration, count = 1) {
         super(duration, count);
         this.x1 = x1;
@@ -92,6 +91,10 @@ class SineMovement
             const angle = this.timer * 2 * Math.PI / this.duration;
             const ratio = (Math.cos(angle) + 1) / 2;
             thing.moveTo(ratio * this.x1 + (1 - ratio) * this.x2, ratio * this.y1 + (1 - ratio) * this.y2);
+            const dratio = Math.PI * Math.sin(angle) / this.duration;
+            const mx = dratio * (this.x2 - this.x1);
+            const my = dratio * (this.y2 - this.y1);
+            thing.setMomentum(mx, my);
         } else {
             thing.moveTo(this.x1, this.y1);
         }

@@ -1,8 +1,9 @@
 "use strict";
 const constants = require('./constants');
-const tiles = require('./tiles');
 const U = constants.GRID_SIZE;
 
+const tileset = new Image();
+tileset.src = 'tilemaps/tileset.png';
 
 /**
  * Tests whether two segments on a 1D line overlap.
@@ -17,17 +18,6 @@ const U = constants.GRID_SIZE;
  */
 function segmentsOverlap(start1, size1, start2, size2) {
     return start1 < start2 + size2 && start2 < start1 + size1;
-}
-
-
-function alphaToString(alpha) {
-    if (alpha >= 1) {
-        return 'ff';
-    } else if (alpha <= 0) {
-        return '00';
-    } else {
-        return ("0" + Math.floor(256 * alpha).toString(16)).substr(-2);
-    }
 }
 
 
@@ -65,10 +55,10 @@ class Thing {
     draw(ctx) {
         if (this.tileData !== undefined) {
             ctx.drawImage(
-                tiles.tilesSheet.canvas,
-                tiles.tilesSheet.offsets[this.tileData.set] + 16 * (this.tileData.index - 1), 16 * this.tileData.rotation,
+                tileset,
+                16 * this.tileData.x, 16 * this.tileData.y,
                 16, 16,
-                this.x, this.y,
+                this.x + this.tileData.shiftX, this.y + this.tileData.shiftY,
                 8, 8);
         } else {
             ctx.fillStyle = this.color;
@@ -102,6 +92,8 @@ class Thing {
 class Actor extends Thing {
     constructor(x, y, width, height) {
         super(x, y, width, height);
+        this.movedSelfX = 0;
+        this.movedSelfY = 0;
         this.movedX = 0;
         this.movedY = 0;
     }
@@ -138,9 +130,8 @@ class Actor extends Thing {
             if (collisionSolid && onCollide) {
                 onCollide();
             }
-            return dx;
+            this.movedX += dx;
         }
-        return 0;
     }
 
     moveY(amount, onCollide = undefined) {
@@ -175,19 +166,30 @@ class Actor extends Thing {
             if (collisionSolid && onCollide) {
                 onCollide();
             }
-            return dy;
+            this.movedY += dy;
         }
-        return 0;
+    }
+
+    beforeUpdate(deltaTime) {
+        this.movedX = 0;
+        this.movedY = 0;
+        this.movedSelfX = 0;
+        this.movedSelfY = 0;
     }
 
     update(deltaTime) {
         super.update(deltaTime);
+    }
+
+    afterUpdate(deltaTime) {
+        this.movedSelfX = this.movedX;
+        this.movedSelfY = this.movedY;
         this.movedX = 0;
         this.movedY = 0;
     }
 
     isRiding(solid) {
-        return this.y === solid.y + solid.height && segmentsOverlap(this.x, this.width, solid.x, solid.width);
+        return this.y + this.height === solid.y && segmentsOverlap(this.x, this.width, solid.x, solid.width);
     }
 
     squish() {
@@ -203,6 +205,7 @@ class Solid extends Thing {
         this.momentumX = 0;
         this.momentumY = 0;
         this.timers.momentum = 0;
+        this.canBeClimbed = true;
     }
 
     getMomentumX() {
@@ -242,13 +245,13 @@ class Solid extends Thing {
                     for (const actor of this.scene.actors) {
                         if (actor.isActive) {
                             if (this.overlaps(actor)) {
-                                actor.movedX += actor.moveX(this.x + this.width - actor.x, () => actor.squish());
+                                actor.moveX(this.x + this.width - actor.x, () => actor.squish());
 
                             } else if (riding.has(actor)) {
                                 if (actor.movedX <= 0) {
-                                    actor.movedX += actor.moveX(moveX);
+                                    actor.moveX(moveX);
                                 } else if (actor.movedX < moveX) {
-                                    actor.movedX += actor.moveX(moveX - actor.movedX);
+                                    actor.moveX(moveX - actor.movedX);
                                 }
                             }
                         }
@@ -260,9 +263,9 @@ class Solid extends Thing {
                                 actor.moveX(this.x - actor.x - actor.width, () => actor.squish());
                             } else if (riding.has(actor)) {
                                 if (actor.movedX >= 0) {
-                                    actor.movedX += actor.moveX(moveX);
+                                    actor.moveX(moveX);
                                 } else if (actor.movedX > moveX) {
-                                    actor.movedX += actor.moveX(moveX - actor.movedX);
+                                    actor.moveX(moveX - actor.movedX);
                                 }
                             }
                         }
@@ -280,9 +283,9 @@ class Solid extends Thing {
                                 actor.moveY(this.y + this.height - actor.y, () => actor.squish());
                             } else if (riding.has(actor)) {
                                 if (actor.movedY <= 0) {
-                                    actor.movedY += actor.moveY(moveY);
+                                    actor.moveY(moveY);
                                 } else if (actor.movedY < moveY) {
-                                    actor.movedY += actor.moveY(moveY - actor.movedY);
+                                    actor.moveY(moveY - actor.movedY);
                                 }
                             }
                         }
@@ -294,9 +297,9 @@ class Solid extends Thing {
                                 actor.moveY(this.y - actor.y - actor.height, () => actor.squish());
                             } else if (riding.has(actor)) {
                                 if (actor.movedY >= 0) {
-                                    actor.movedY += actor.moveY(moveY);
+                                    actor.moveY(moveY);
                                 } else if (actor.movedY > moveY) {
-                                    actor.movedY += actor.moveY(moveY - actor.movedY);
+                                    actor.moveY(moveY - actor.movedY);
                                 }
                             }
                         }
@@ -343,7 +346,7 @@ class Hazard extends Thing {
         this.color = '#f31314';
     }
 
-    interactWith(player) {
+    onContactWith(player) {
         player.die();
     }
 
@@ -363,16 +366,17 @@ class Hazard extends Thing {
 
 class Platform extends Solid {
     constructor(x, y, width, tileData) {
-        super(x, y + U / 2, width, U / 2, tileData);
+        super(x, y, width, U / 2, tileData);
         this.color = "#a8612a";
+        this.canBeClimbed = false;
     }
 
     collidesWithMovingActor(actor, dx = 0, dy = 0) {
-        if (dy < 0) {
+        if (dy > 0) {
             return this.collidable &&
                 segmentsOverlap(this.x, this.width, actor.x, actor.width) &&
-                actor.y >= this.y + this.height &&
-                actor.y + dy < this.y + this.height;
+                actor.y + actor.height <= this.y &&
+                actor.y + actor.height + dy > this.y;
         }
         return false;
     }
@@ -380,10 +384,10 @@ class Platform extends Solid {
     draw(ctx) {
         if (this.tileData !== undefined) {
             ctx.drawImage(
-                tiles.tilesSheet.canvas,
-                tiles.tilesSheet.offsets[this.tileData.set] + 16 * (this.tileData.index - 1), 16 * this.tileData.rotation,
+                tileset,
+                16 * (this.tileData.x), 16 * this.tileData.y,
                 16, 16,
-                this.x, this.y - this.height,
+                this.x, this.y,
                 8, 8);
         } else {
             super.draw(ctx);
@@ -393,12 +397,12 @@ class Platform extends Solid {
 
 
 class Spring extends Thing {
-    constructor(x, y) {
-        super(x, y, 2 * U, U / 2);
-        this.color = "#dedf35";
+    constructor(x, y, tileData) {
+        super(x, y + U / 2, U, U / 2, tileData);
+        this.tileData.shiftY = -U / 2;
     }
 
-    interactWith(player) {
+    onContactWith(player) {
         player.setState(constants.STATE_BOUNCE);
         player.speedX = 0;
         player.speedY = constants.BOUNCE_SPEED;
@@ -408,9 +412,8 @@ class Spring extends Thing {
 
 
 class DashDiamond extends Thing {
-    constructor(x, y) {
-        super(x + .5 * U, y + .5 * U, U, U);
-        this.color = "#79ff00";
+    constructor(x, y, tileData) {
+        super(x, y, U, U, tileData);
     }
 
     update(deltaTime) {
@@ -420,7 +423,7 @@ class DashDiamond extends Thing {
         }
     }
 
-    interactWith(player) {
+    onContactWith(player) {
         if (player.restoreDash()) {
             this.isActive = false;
             this.timers.cooldown = 2;
@@ -428,62 +431,57 @@ class DashDiamond extends Thing {
     }
 
     draw(ctx) {
-        ctx.strokeStyle = this.color;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
         if (this.isActive) {
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
+            super.draw(ctx);
         }
     }
 }
 
 
 class Strawberry extends Thing {
-    constructor(x, y) {
-        super(x + .5 * U, y + .5 * U, U, U);
-        this.color = "#ff009a";
+    constructor(x, y, tileData) {
+        super(x, y, U, U, tileData);
     }
 
-    interactWith(player) {
-        player.temporaryStrawberries.add(this);
-        this.isActive = false;
+    onContactWith(player) {
+        if (player.isActive) {
+            player.temporaryStrawberries.add(this);
+            this.isActive = false;
+        }
     }
 
     draw(ctx) {
-        ctx.strokeStyle = this.color;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
         if (this.isActive) {
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
+            super.draw(ctx);
         }
     }
 }
 
 
 class Transition extends Thing {
-    constructor(x, y, width, height, targetScene, targetX, targetY) {
+    constructor(x, y, width, height, targetScene, targetX, targetY, spawnPointIndex = 0) {
         super(x, y, width, height);
         this.targetScene = targetScene;
         this.targetX = targetX;
         this.targetY = targetY;
+        this.spawnPointIndex = spawnPointIndex;
     }
 
-    interactWith(player) {
-        player.transitionScene(this.targetScene);
+    onContactWith(player) {
         player.x += this.targetX - this.x;
         player.y += this.targetY - this.y;
+        player.makeTransition(this);
         this.scene.transition = this;
     }
 }
 
 
 class CrumblingBlock extends Solid {
-    constructor(x, y, width, height) {
-        super(x, y, width, height);
+    constructor(x, y, tileData) {
+        super(x, y, U, U, tileData);
         this.isFalling = false;
         this.timers.fall = 0;
         this.timers.cooldown = 0;
-        this.color = "#323232";
     }
 
     update(deltaTime) {
@@ -492,16 +490,24 @@ class CrumblingBlock extends Solid {
             if (this.timers.fall <= 0) {
                 this.isFalling = false;
                 this.isActive = false;
-                this.timers.cooldown = 4;
+                this.timers.cooldown = 2;
             }
         } else if (!this.isActive) {
             if (this.timers.cooldown <= 0) {
-                this.isActive = true;
+                let shouldBecomeActive = true;
+                for (const actor of this.scene.actors) {
+                    if (actor.isActive && this.overlaps(actor)) {
+                        shouldBecomeActive = false;
+                    }
+                }
+                if (shouldBecomeActive) {
+                    this.isActive = true;
+                }
             }
         } else {
             if (this.scene.player && this.scene.player.isRiding(this)) {
                 this.isFalling = true;
-                this.timers.fall = 1;
+                this.timers.fall = .5;
             }
         }
     }
@@ -509,12 +515,13 @@ class CrumblingBlock extends Solid {
     draw(ctx) {
         if (this.isActive) {
             if (this.isFalling) {
-                const alpha = this.timers.fall;
-                ctx.fillStyle = this.color + alphaToString(alpha);
-                ctx.fillRect(this.x, this.y, this.width, this.height);
+                const alpha = 2 * this.timers.fall;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                super.draw(ctx);
+                ctx.restore();
             } else {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
+                super.draw(ctx);
             }
         }
     }
@@ -544,9 +551,54 @@ class TriggerBlock extends Solid {
 }
 
 
+class SpikesUp extends Thing {
+    constructor(x, y, tileData) {
+        tileData.shiftY = -U/2;
+        super(x, y + U/2, U, U/2, tileData);
+    }
+
+    onContactWith(player) {
+        player.die();
+    }
+}
+
+
+class SpikesDown extends Thing {
+    constructor(x, y, tileData) {
+        super(x, y, U, U/2, tileData);
+    }
+
+    onContactWith(player) {
+        player.die();
+    }
+}
+
+
+class SpikesRight extends Thing {
+    constructor(x, y, tileData) {
+        super(x, y, U / 2, U, tileData);
+    }
+
+    onContactWith(player) {
+        player.die();
+    }
+}
+
+
+class SpikesLeft extends Thing {
+    constructor(x, y, tileData) {
+        tileData.shiftX = -U/2;
+        super(x + U/2, y, U/2, U, tileData);
+    }
+
+    onContactWith(player) {
+        player.die();
+    }
+}
+
+
 module.exports = {
     segmentsOverlap,
-    alphaToString,
     Hazard,
     Solid,
     Actor,
@@ -557,4 +609,8 @@ module.exports = {
     Transition,
     TriggerBlock,
     CrumblingBlock,
+    SpikesUp,
+    SpikesDown,
+    SpikesLeft,
+    SpikesRight,
 }

@@ -12,7 +12,7 @@ const ANIMATION_FALL = [5, 3];
 const ANIMATION_DIE = [0, 8];
 
 class Player extends physics.Actor {
-    constructor(x, y) {
+    constructor(x = 0, y = 0) {
         super(x, y, 8, 14);
         this.speedX = 0;
         this.speedY = 0;
@@ -52,7 +52,7 @@ class Player extends physics.Actor {
             sprites.spritesSheet.canvas,
             16 * index, 16 * row,
             16, 16,
-            this.x - 4, this.y,
+            this.x - 4, this.y - 2,
             16, 16);
     }
 
@@ -70,12 +70,12 @@ class Player extends physics.Actor {
         this.carryingSolids.clear();
         for (const solid of this.scene.solids) {
             if (solid.isActive) {
-                if (this.y === solid.y + solid.height && physics.segmentsOverlap(this.x, this.width, solid.x, solid.width)) {
+                if (this.y + this.height === solid.y && physics.segmentsOverlap(this.x, this.width, solid.x, solid.width)) {
                     // player is standing on a solid
                     this.carryingSolids.add(solid);
                     this.isGrounded = true;
                 }
-                if (physics.segmentsOverlap(this.y, this.height, solid.y, solid.height)) {
+                if (solid.canBeClimbed && physics.segmentsOverlap(this.y, this.height, solid.y, solid.height)) {
                     // check for walls on right and left at distance <= WALL_JUMP_CHECK_DISTANCE
                     const distanceLeft = this.x - solid.x - solid.width;
                     if (0 <= distanceLeft && distanceLeft < constants.WALL_JUMP_CHECK_DISTANCE) {
@@ -109,20 +109,14 @@ class Player extends physics.Actor {
         this.moveX(this.speedX * deltaTime, () => this.speedX = 0);
         this.moveY(this.speedY * deltaTime, () => this.speedY = 0);
 
-        // set color
-        this.color = this.nbDashes > 0 ? '#a63636' : '#3fb0f6';
-        if (this.state === constants.STATE_DEAD) {
-            this.color = "" + this.color + physics.alphaToString(this.timers.dying / constants.DYING_TIME);
-        }
-
         // interact with objects
         for (const element of this.scene.elements) {
             if (element.isActive && this.overlaps(element)) {
-                element.interactWith(this);
+                element.onContactWith(this);
             }
         }
 
-        if (this.y <= -this.height) {
+        if (this.y >= this.scene.height) {
             this.die();
         }
     }
@@ -144,7 +138,7 @@ class Player extends physics.Actor {
                 break;
             case constants.STATE_JUMP:
                 if (this.inputs.jumpHeld && this.timers.varJump > 0) {
-                    this.speedY = Math.max(this.speedY, constants.JUMP_SPEED);
+                    this.speedY = Math.min(this.speedY, -constants.JUMP_SPEED);
                 } else {
                     this.setState(constants.STATE_NORMAL);
                 }
@@ -163,7 +157,7 @@ class Player extends physics.Actor {
                     const speed = this.dashSpeedX && this.dashSpeedY ? constants.END_DASH_SPEED / Math.sqrt(2) : constants.END_DASH_SPEED;
                     this.speedX = Math.sign(this.dashSpeedX) * speed;
                     this.speedY = Math.sign(this.dashSpeedY) * speed;
-                    if (this.dashSpeedY > 0) {
+                    if (this.dashSpeedY < 0) {
                         this.speedY *= constants.END_DASH_UP_FACTOR;
                     }
                     this.setState(constants.STATE_NORMAL);
@@ -171,7 +165,7 @@ class Player extends physics.Actor {
                 break;
             case constants.STATE_BOUNCE:
                 if (this.timers.bounce > 0) {
-                    this.speedY = constants.BOUNCE_SPEED;
+                    this.speedY = -constants.BOUNCE_SPEED;
                 } else {
                     this.setState(constants.STATE_NORMAL);
                 }
@@ -188,7 +182,7 @@ class Player extends physics.Actor {
         ) {
             const dashSpeed = this.inputs.xAxis && this.inputs.yAxis ? constants.DASH_SPEED / Math.sqrt(2) : constants.DASH_SPEED;
             this.dashSpeedX = this.inputs.xAxis * Math.max(Math.abs(this.speedX), dashSpeed);
-            this.dashSpeedY = this.inputs.yAxis * dashSpeed;
+            this.dashSpeedY = -this.inputs.yAxis * dashSpeed;
             this.speedX = 0;
             this.speedY = 0;
             this.inputs.dashPressedBuffer = false;
@@ -206,7 +200,7 @@ class Player extends physics.Actor {
             // regular jump
             this.inputs.jumpPressedBuffer = false;
             this.speedX += this.inputs.xAxis * constants.JUMP_HORIZONTAL_BOOST;
-            this.speedY = constants.JUMP_SPEED;
+            this.speedY = -constants.JUMP_SPEED;
             this.setState(constants.STATE_JUMP);
             didJump = true;
         } else if (this.inputs.jumpPressedBuffer && (this.hasWallLeft || this.hasWallRight)) {
@@ -214,7 +208,7 @@ class Player extends physics.Actor {
             this.inputs.jumpPressedBuffer = false;
             let dx = this.hasWallLeft ? 1 : -1;
             this.speedX = dx * constants.WALL_JUMP_HSPEED;
-            this.speedY = constants.JUMP_SPEED;
+            this.speedY = -constants.JUMP_SPEED;
             this.setState(constants.STATE_JUMP);
             didJump = true;
         }
@@ -261,12 +255,12 @@ class Player extends physics.Actor {
         if (!this.isGrounded) {
             if (this.isHuggingWall) {
                 if (this.inputs.yAxis === 1) {
-                    this.speedY = constants.CLIMB_UP_SPEED;
+                    this.speedY = -constants.CLIMB_UP_SPEED;
                 } else {
-                    this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.CLIMB_SLIP_SPEED);
+                    this.speedY = Math.min(this.speedY + constants.GRAVITY * deltaTime, constants.CLIMB_SLIP_SPEED);
                 }
             } else {
-                this.speedY = Math.max(this.speedY - constants.GRAVITY * deltaTime, -constants.MAX_FALL_SPEED);
+                this.speedY = Math.min(this.speedY + constants.GRAVITY * deltaTime, constants.MAX_FALL_SPEED);
             }
         }
     }
@@ -292,6 +286,7 @@ class Player extends physics.Actor {
             }
         }
     }
+
     setState(newState) {
         if (newState !== this.state) {
             switch (this.state) {
@@ -334,7 +329,7 @@ class Player extends physics.Actor {
         }
     }
 
-    transitionScene(targetScene) {
+    makeTransition(transition) {
         // validate temporary strawberries
         for (const strawberry of this.temporaryStrawberries) {
             strawberry.scene.removeElement(strawberry);
@@ -342,11 +337,13 @@ class Player extends physics.Actor {
         }
         this.temporaryStrawberries.clear();
         this.scene.setPlayer(undefined);
-        targetScene.setPlayer(this);
+        transition.targetScene.setPlayer(this);
+        transition.targetScene.spawnPointIndex = transition.spawnPointIndex;
     }
 
     die() {
         // reactivate temporary strawberries
+        this.isActive = false;
         for (const strawberry of this.temporaryStrawberries) {
             strawberry.isActive = true;
         }
@@ -356,8 +353,9 @@ class Player extends physics.Actor {
     }
 
     respawn() {
-        this.x = this.scene.startPositionX;
-        this.y = this.scene.startPositionY;
+        const point = this.scene.spawnPoints[this.scene.spawnPointIndex];
+        this.x = point.x;
+        this.y = point.y - 6;
         this.xRemainder = 0;
         this.yRemainder = 0;
         this.speedX = 0;
@@ -368,6 +366,7 @@ class Player extends physics.Actor {
             this.timers[t] = 0;
         }
         this.setState(constants.STATE_NORMAL);
+        this.isActive = true;
         this.restoreDash();
     }
 

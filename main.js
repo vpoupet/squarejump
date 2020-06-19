@@ -1,12 +1,11 @@
 "use strict";
 const constants = require('./constants');
-const maps = require('./maps');
 const inputs = require('./inputs');
 const player = require('./player');
-const tiles = require('./tiles');
+const maps = require('./maps');
 const sprites = require('./sprites');
 
-const SCALING = 4;
+const SCALING = 3;
 let SLOWDOWN_FACTOR = 1;
 const FIXED_DELTA_TIME = true;
 const FRAME_RATE = 60;
@@ -21,7 +20,6 @@ let frameRateStartTime = Date.now();
 let slowdownCounter = 0;
 let scrollX = 0;
 let scrollY = 0;
-
 
 function slowdown(factor) {
     SLOWDOWN_FACTOR = factor;
@@ -83,6 +81,7 @@ function update() {
 }
 
 window.onload = function () {
+    // keyboard events
     document.addEventListener('keydown', e => {
         inputs.pressedKeys.add(e.key);
         switch (e.key) {
@@ -98,6 +97,8 @@ window.onload = function () {
     document.addEventListener('keyup', e => {
         inputs.pressedKeys.delete(e.key);
     });
+
+    // prepare canvas and context
     const screen = document.getElementById('game-screen');
     screen.style.width = `${constants.VIEW_WIDTH * SCALING}px`;
     screen.style.height = `${constants.VIEW_HEIGHT * SCALING}px`;
@@ -106,16 +107,19 @@ window.onload = function () {
 
     canvas.width = SCALING * constants.VIEW_WIDTH;
     canvas.height = SCALING * constants.VIEW_HEIGHT;
-    context.scale(SCALING, -SCALING);
-    context.translate(0, -constants.VIEW_HEIGHT);
+    context.scale(SCALING, SCALING);
     context.imageSmoothingEnabled = false;
 
-    currentScene = maps.CELESTE_01;
-    let p = new player.Player(currentScene.startPositionX, currentScene.startPositionY);
-    currentScene.setPlayer(p);
-    window.keymap = p.inputs.keymap;
-    start();
+    // load all scenes and start game
+    maps.loadScenes.then(() => {
+        currentScene = maps.scenes.CELESTE_01;
+        currentScene.spawnPointIndex = 1;
+        currentScene.setPlayer(new player.Player());
+        currentScene.player.respawn();
+        start();
+    });
 };
+
 
 // Gamepad API
 window.addEventListener("gamepadconnected", (event) => {
