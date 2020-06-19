@@ -31,10 +31,10 @@ const loadScenes = new Promise(resolve => {
         fetch("tilemaps/celeste07.json").then(response => response.json()),
         fetch("tilemaps/celeste08.json").then(response => response.json()),
         fetch("tilemaps/celeste09.json").then(response => response.json()),
-        // fetch("tilemaps/celeste10.json").then(response => response.json()),
-        // fetch("tilemaps/celeste11.json").then(response => response.json()),
-        // fetch("tilemaps/celeste12.json").then(response => response.json()),
-        // fetch("tilemaps/celeste13.json").then(response => response.json()),
+        fetch("tilemaps/celeste10.json").then(response => response.json()),
+        fetch("tilemaps/celeste11.json").then(response => response.json()),
+        fetch("tilemaps/celeste12.json").then(response => response.json()),
+        fetch("tilemaps/celeste13.json").then(response => response.json()),
         fetch("tilemaps/louis01.json").then(response => response.json()),
         fetch("tilemaps/louis02.json").then(response => response.json()),
         fetch("tilemaps/louis03.json").then(response => response.json()),
@@ -51,10 +51,10 @@ const loadScenes = new Promise(resolve => {
             "CELESTE_07",
             "CELESTE_08",
             "CELESTE_09",
-            // "CELESTE_10",
-            // "CELESTE_11",
-            // "CELESTE_12",
-            // "CELESTE_13",
+            "CELESTE_10",
+            "CELESTE_11",
+            "CELESTE_12",
+            "CELESTE_13",
             "LOUIS_01",
             "LOUIS_02",
             "LOUIS_03",
@@ -92,11 +92,11 @@ const loadScenes = new Promise(resolve => {
         makeTransitionRight(scenes.CELESTE_07, 29, 0, scenes.CELESTE_06, 30, 1, 3);
         makeTransitionRight(scenes.CELESTE_06, 30, 2, scenes.CELESTE_08, 5, 0, 4);
         makeTransitionUp(scenes.CELESTE_06, 35, 0, scenes.CELESTE_09, 1, 2, 3);
-        // makeTransitionRight(scenes.CELESTE_10, 7, 0, scenes.CELESTE_09, 7, 1, 4);
-        // makeTransitionRight(scenes.CELESTE_11, 8, 1, scenes.CELESTE_10, 8, 0, 4);
-        // makeTransitionUp(scenes.CELESTE_10, 2, 1, scenes.CELESTE_12, 42, 1, 3);
-        // makeTransitionUp(scenes.CELESTE_11, 3, 0, scenes.CELESTE_12, 3, 0, 2);
-        // makeTransitionRight(scenes.CELESTE_09, 0, 0, scenes.CELESTE_13, 0, 0, 10);
+        makeTransitionRight(scenes.CELESTE_10, 7, 0, scenes.CELESTE_09, 7, 1, 4);
+        makeTransitionRight(scenes.CELESTE_11, 8, 1, scenes.CELESTE_10, 8, 0, 4);
+        makeTransitionUp(scenes.CELESTE_10, 2, 1, scenes.CELESTE_12, 42, 1, 3);
+        makeTransitionUp(scenes.CELESTE_11, 3, 0, scenes.CELESTE_12, 3, 0, 2);
+        makeTransitionRight(scenes.CELESTE_09, 0, 0, scenes.CELESTE_13, 0, 0, 10);
 
         makeTransitionUp(scenes.LOUIS_01, 35, 0, scenes.LOUIS_02, 4, 1, 3);
         makeTransitionUp(scenes.LOUIS_03, 3, 0, scenes.LOUIS_02, 13, 0, 3);
