@@ -43,6 +43,7 @@ class Thing {
         this.scene = undefined;
         this.timers = {};
         this.isActive = true;
+        this.attachedThings = new Set();
     }
 
     overlaps(other) {
@@ -76,6 +77,19 @@ class Thing {
     }
 
     move(dx, dy) {
+        for (const thing of this.attachedThings) {
+            thing.move(dx, dy);
+        }
+
+        this.xRemainder += dx;
+        this.yRemainder += dy;
+        const moveX = Math.round(this.xRemainder);
+        const moveY = Math.round(this.yRemainder);
+
+        this.xRemainder -= moveX;
+        this.x += moveX;
+        this.yRemainder -= moveY;
+        this.y += moveY;
     }
 
     moveTo(x, y) {
@@ -222,7 +236,11 @@ class Solid extends Thing {
         return 0;
     }
 
-    move(dx, dy, mx = undefined, my = undefined) {
+    move(dx, dy) {
+        for (const thing of this.attachedThings) {
+            thing.move(dx, dy);
+        }
+
         this.xRemainder += dx;
         this.yRemainder += dy;
         const moveX = Math.round(this.xRemainder);
@@ -348,18 +366,6 @@ class Hazard extends Thing {
 
     onContactWith(player) {
         player.die();
-    }
-
-    move(dx, dy) {
-        this.xRemainder += dx;
-        this.yRemainder += dy;
-        const moveX = Math.round(this.xRemainder);
-        const moveY = Math.round(this.yRemainder);
-
-        this.xRemainder -= moveX;
-        this.x += moveX;
-        this.yRemainder -= moveY;
-        this.y += moveY;
     }
 }
 
@@ -568,8 +574,8 @@ class TriggerBlock extends Solid {
 
 class SpikesUp extends Thing {
     constructor(x, y, tileData) {
-        tileData.shiftY = -U/2;
-        super(x, y + U/2, U, U/2, tileData);
+        tileData.shiftY = -U / 2;
+        super(x, y + U / 2, U, U / 2, tileData);
     }
 
     onContactWith(player) {
@@ -580,7 +586,7 @@ class SpikesUp extends Thing {
 
 class SpikesDown extends Thing {
     constructor(x, y, tileData) {
-        super(x, y, U, U/2, tileData);
+        super(x, y, U, U / 2, tileData);
     }
 
     onContactWith(player) {
@@ -602,8 +608,8 @@ class SpikesRight extends Thing {
 
 class SpikesLeft extends Thing {
     constructor(x, y, tileData) {
-        tileData.shiftX = -U/2;
-        super(x + U/2, y, U/2, U, tileData);
+        tileData.shiftX = -U / 2;
+        super(x + U / 2, y, U / 2, U, tileData);
     }
 
     onContactWith(player) {

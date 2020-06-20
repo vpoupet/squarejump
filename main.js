@@ -112,7 +112,7 @@ window.onload = function () {
 
     // load all scenes and start game
     maps.loadScenes.then(() => {
-        currentScene = maps.scenes.CELESTE_01;
+        currentScene = maps.scenes.CELESTE_13;
         currentScene.spawnPointIndex = 1;
         currentScene.setPlayer(new player.Player());
         currentScene.player.respawn();

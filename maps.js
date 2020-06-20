@@ -36,6 +36,8 @@ const loadScenes = new Promise(resolve => {
         fetch("tilemaps/celeste12.json").then(response => response.json()),
         fetch("tilemaps/celeste13.json").then(response => response.json()),
         fetch("tilemaps/celeste14.json").then(response => response.json()),
+        fetch("tilemaps/celeste15.json").then(response => response.json()),
+        fetch("tilemaps/celeste16.json").then(response => response.json()),
         fetch("tilemaps/louis01.json").then(response => response.json()),
         fetch("tilemaps/louis02.json").then(response => response.json()),
         fetch("tilemaps/louis03.json").then(response => response.json()),
@@ -57,6 +59,8 @@ const loadScenes = new Promise(resolve => {
             "CELESTE_12",
             "CELESTE_13",
             "CELESTE_14",
+            "CELESTE_15",
+            "CELESTE_16",
             "LOUIS_01",
             "LOUIS_02",
             "LOUIS_03",
@@ -87,17 +91,47 @@ const loadScenes = new Promise(resolve => {
         ])));
 
         scenes.CELESTE_14.addSolid(new physics.TriggerBlock(11 * U, 29 * U, 4 * U, 2 * U, new movement.SequenceMovement([
-            new movement.Movement(.75),
+            new movement.Movement(.25),
             new movement.LinearMovement(11 * U, 29 * U, 19 * U, 29 * U, .35),
             new movement.Movement(1),
             new movement.LinearMovement(19 * U, 29 * U, 11 * U, 29 * U, 1.5),
         ])));
 
         scenes.CELESTE_14.addSolid(new physics.TriggerBlock(26 * U, 28 * U, 5 * U, 2 * U, new movement.SequenceMovement([
-            new movement.Movement(.75),
+            new movement.Movement(.25),
             new movement.LinearMovement(26 * U, 28 * U, 26 * U, 22 * U, .35),
             new movement.Movement(1),
             new movement.LinearMovement(26 * U, 22 * U, 26 * U, 28 * U, 1.5),
+        ])));
+
+        {
+            const triggerBlock = new physics.TriggerBlock(24 * U, 6 * U, 2 * U, 7 * U, new movement.SequenceMovement([
+                new movement.Movement(.25),
+                new movement.LinearMovement(24 * U, 6 * U, 24 * U, 17 * U, .35),
+                new movement.Movement(1),
+                new movement.LinearMovement(24 * U, 17 * U, 24 * U, 6 * U, 1.5),
+            ]));
+            const tileData = {
+                x: 0,
+                y: 5,
+                shiftX: 0,
+                shiftY: 0,
+            };
+            const spikes1 = new physics.SpikesUp(24 * U, 5 * U, tileData);
+            const spikes2 = new physics.SpikesUp(25 * U, 5 * U, tileData);
+            triggerBlock.attachedThings.add(spikes1);
+            triggerBlock.attachedThings.add(spikes2);
+
+            scenes.CELESTE_15.addSolid(triggerBlock);
+            scenes.CELESTE_15.addElement(spikes1);
+            scenes.CELESTE_15.addElement(spikes2);
+        }
+
+        scenes.CELESTE_15.addSolid(new physics.TriggerBlock(15 * U, 20 * U, 2 * U, 4 * U, new movement.SequenceMovement([
+            new movement.Movement(.25),
+            new movement.LinearMovement(15 * U, 20 * U, 9 * U, 20 * U, .35),
+            new movement.Movement(1),
+            new movement.LinearMovement(9 * U, 20 * U, 15 * U, 20 * U, 1.5),
         ])));
 
         makeTransitionUp(scenes.CELESTE_01, 31, 0, scenes.CELESTE_02, 1, 1, 5);
@@ -114,7 +148,8 @@ const loadScenes = new Promise(resolve => {
         makeTransitionUp(scenes.CELESTE_11, 3, 0, scenes.CELESTE_12, 3, 0, 2);
         makeTransitionRight(scenes.CELESTE_09, 0, 0, scenes.CELESTE_13, 0, 0, 10);
         makeTransitionRight(scenes.CELESTE_13, 0, 1, scenes.CELESTE_14, 22, 2, 10);
-
+        makeTransitionRight(scenes.CELESTE_15, 22, 1, scenes.CELESTE_14, 4, 0, 5);
+        makeTransitionRight(scenes.CELESTE_16, 19, 0, scenes.CELESTE_15, 2, 0, 2);
 
         makeTransitionUp(scenes.LOUIS_01, 35, 0, scenes.LOUIS_02, 4, 1, 3);
         makeTransitionUp(scenes.LOUIS_03, 3, 0, scenes.LOUIS_02, 13, 0, 3);

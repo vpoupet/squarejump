@@ -146,14 +146,14 @@ class Scene {
     }
 
     draw(ctx) {
-        for (const decoration of this.decorations) {
-            decoration.draw(ctx);
+        for (const element of this.elements) {
+            element.draw(ctx);
         }
         for (const solid of this.solids) {
             solid.draw(ctx);
         }
-        for (const element of this.elements) {
-            element.draw(ctx);
+        for (const decoration of this.decorations) {
+            decoration.draw(ctx);
         }
         for (const actor of this.actors) {
             actor.draw(ctx);
