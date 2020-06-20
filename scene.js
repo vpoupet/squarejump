@@ -19,12 +19,12 @@ class Scene {
         this.scrollY = U / 2;
         this.solids = new Set();
         this.actors = new Set();
-        this.elements = new Set();
-        this.decorations = new Set();
+        this.things = new Set();
         this.spawnPoints = [];
         this.transition = undefined;
         this.player = undefined;
         this.spawnPointIndex = 0;
+        this.shouldReset = false;
     }
 
     static fromJSON(data) {
@@ -55,7 +55,7 @@ class Scene {
 
                 switch (index - 1) {
                     case 21:
-                        scene.addElement(new physics.DashDiamond(x + U / 2, y + U / 2, tileData));
+                        scene.addThing(new physics.DashDiamond(x + U / 2, y + U / 2, tileData));
                         break;
                     case 31:
                         scene.spawnPoints.push({x: x, y: y});
@@ -69,26 +69,26 @@ class Scene {
                         scene.addSolid(new physics.Platform(x, y, U, tileData));
                         break;
                     case 40:
-                        scene.addElement(new physics.SpikesUp(x, y, tileData));
+                        scene.addThing(new physics.SpikesUp(x, y, tileData));
                         break;
                     case 41:
-                        scene.addElement(new physics.SpikesRight(x, y, tileData));
+                        scene.addThing(new physics.SpikesRight(x, y, tileData));
                         break;
                     case 42:
-                        scene.addElement(new physics.SpikesDown(x, y, tileData));
+                        scene.addThing(new physics.SpikesDown(x, y, tileData));
                         break;
                     case 43:
-                        scene.addElement(new physics.SpikesLeft(x, y, tileData));
+                        scene.addThing(new physics.SpikesLeft(x, y, tileData));
                         break;
                     case 49:
                     case 58:
                     case 59:
                     case 60:
                     case 61:
-                        scene.addElement(new physics.Hazard(x, y, U, U, tileData));
+                        scene.addThing(new physics.Hazard(x, y, U, U, tileData));
                         break;
                     case 13:
-                        scene.addElement(new physics.Strawberry(x + U / 2, y + U / 2, tileData));
+                        scene.addThing(new physics.Strawberry(x + U / 2, y + U / 2, tileData));
                         break;
                     case 57:
                         scene.addSolid(new physics.CrumblingBlock(x, y, tileData));
@@ -96,7 +96,7 @@ class Scene {
                     case 50:
                     case 52:
                     case 53:
-                        scene.addElement(new physics.Spring(x, y, tileData));
+                        scene.addThing(new physics.Spring(x, y, tileData));
                         break;
                     default:
                         scene.addSolid(new physics.Solid(x, y, U, U, tileData));
@@ -107,19 +107,24 @@ class Scene {
     }
 
     update(deltaTime) {
-        for (const element of this.elements) {
-            element.update(deltaTime);
+        for (const solid of this.solids) {
+            solid.beforeUpdate(deltaTime);
+        }
+        for (const thing of this.things) {
+            thing.beforeUpdate(deltaTime);
         }
         for (const actor of this.actors) {
             actor.beforeUpdate(deltaTime);
-            actor.update(deltaTime);
-            actor.afterUpdate(deltaTime);
         }
+
         for (const solid of this.solids) {
             solid.update(deltaTime);
         }
-        for (const decoration of this.decorations) {
-            decoration.update(deltaTime);
+        for (const thing of this.things) {
+            thing.update(deltaTime);
+        }
+        for (const actor of this.actors) {
+            actor.update(deltaTime);
         }
 
         // scroll view
@@ -143,17 +148,31 @@ class Scene {
                     this.player.y - .40 * constants.VIEW_HEIGHT);
             }
         }
+
+        if (this.shouldReset) {
+            this.reset();
+        }
+    }
+
+    reset() {
+        this.shouldReset = false;
+        for (const thing of this.things) {
+            thing.reset();
+        }
+        for (const solid of this.solids) {
+            solid.reset();
+        }
+        for (const actor of this.actors) {
+            actor.reset();
+        }
     }
 
     draw(ctx) {
-        for (const element of this.elements) {
-            element.draw(ctx);
+        for (const thing of this.things) {
+            thing.draw(ctx);
         }
         for (const solid of this.solids) {
             solid.draw(ctx);
-        }
-        for (const decoration of this.decorations) {
-            decoration.draw(ctx);
         }
         for (const actor of this.actors) {
             actor.draw(ctx);
@@ -190,14 +209,14 @@ class Scene {
         solid.scene = undefined;
     }
 
-    addElement(element) {
-        this.elements.add(element);
-        element.scene = this;
+    addThing(thing) {
+        this.things.add(thing);
+        thing.scene = this;
     }
 
-    removeElement(element) {
-        this.elements.delete(element);
-        element.scene = undefined;
+    removeThing(thing) {
+        this.things.delete(thing);
+        thing.scene = undefined;
     }
 }
 

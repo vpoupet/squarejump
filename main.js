@@ -3,7 +3,6 @@ const constants = require('./constants');
 const inputs = require('./inputs');
 const player = require('./player');
 const maps = require('./maps');
-const sprites = require('./sprites');
 
 const SCALING = 3;
 let SLOWDOWN_FACTOR = 1;
@@ -115,7 +114,7 @@ window.onload = function () {
         currentScene = maps.scenes.CELESTE_01;
         currentScene.spawnPointIndex = 1;
         currentScene.setPlayer(new player.Player());
-        currentScene.player.respawn();
+        currentScene.reset();
         start();
     });
 };

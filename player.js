@@ -109,10 +109,12 @@ class Player extends physics.Actor {
         this.moveX(this.speedX * deltaTime, () => this.speedX = 0);
         this.moveY(this.speedY * deltaTime, () => this.speedY = 0);
 
-        // interact with objects
-        for (const element of this.scene.elements) {
-            if (element.isActive && this.overlaps(element)) {
-                element.onContactWith(this);
+        // interact with Things
+        if (this.isActive) {
+            for (const thing of this.scene.things) {
+                if (thing.isActive && this.overlaps(thing)) {
+                    thing.onContactWith(this);
+                }
             }
         }
 
@@ -125,7 +127,7 @@ class Player extends physics.Actor {
         switch (this.state) {
             case constants.STATE_DEAD:
                 if (this.timers.dying <= 0) {
-                    this.respawn();
+                    this.scene.shouldReset = true;
                 }
                 this.speedX = 0;
                 this.speedY = 0;
@@ -332,7 +334,7 @@ class Player extends physics.Actor {
     makeTransition(transition) {
         // validate temporary strawberries
         for (const strawberry of this.temporaryStrawberries) {
-            strawberry.scene.removeElement(strawberry);
+            strawberry.scene.removeThing(strawberry);
             this.strawberries.add(strawberry);
         }
         this.temporaryStrawberries.clear();
@@ -342,17 +344,14 @@ class Player extends physics.Actor {
     }
 
     die() {
-        // reactivate temporary strawberries
         this.isActive = false;
-        for (const strawberry of this.temporaryStrawberries) {
-            strawberry.isActive = true;
-        }
         this.temporaryStrawberries.clear();
         this.setState(constants.STATE_DEAD);
         this.setAnimation(...ANIMATION_DIE);
     }
 
-    respawn() {
+    reset() {
+        super.reset();
         const point = this.scene.spawnPoints[this.scene.spawnPointIndex];
         this.x = point.x;
         this.y = point.y - 6;
@@ -362,11 +361,7 @@ class Player extends physics.Actor {
         this.speedY = 0;
         this.dashSpeedX = 0;
         this.dashSpeedY = 0;
-        for (const t in this.timers) {
-            this.timers[t] = 0;
-        }
         this.setState(constants.STATE_NORMAL);
-        this.isActive = true;
         this.restoreDash();
     }
 
