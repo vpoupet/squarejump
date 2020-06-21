@@ -2,6 +2,7 @@
 const constants = require('./constants');
 const inputs = require('./inputs');
 const player = require('./player');
+const sound = require('./sound');
 const maps = require('./maps');
 
 const SCALING = 3;
@@ -35,12 +36,14 @@ function setScroll(x, y) {
 
 function start() {
     isRunning = true;
+    sound.playSound(sound.music);
     update();
 }
 
 
 function stop() {
     isRunning = false;
+    music.stop();
 }
 
 
@@ -115,7 +118,7 @@ window.onload = function () {
         currentScene.spawnPointIndex = 1;
         currentScene.setPlayer(new player.Player());
         currentScene.reset();
-        start();
+        document.getElementById("game-screen").addEventListener("click", () => { start(); });
     });
 };
 

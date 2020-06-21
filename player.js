@@ -3,6 +3,8 @@ const inputs = require('./inputs');
 const physics = require('./physics');
 const constants = require('./constants');
 const sprites = require('./sprites');
+const sound = require('./sound');
+
 const ANIMATION_SLOWDOWN = 6;
 
 const ANIMATION_IDLE = [4, 4];
@@ -10,6 +12,7 @@ const ANIMATION_RUN = [1, 6];
 const ANIMATION_JUMP = [6, 3];
 const ANIMATION_FALL = [5, 3];
 const ANIMATION_DIE = [0, 8];
+
 
 class Player extends physics.Actor {
     constructor(x = 0, y = 0) {
@@ -312,15 +315,18 @@ class Player extends physics.Actor {
                 case constants.STATE_NORMAL:
                     break;
                 case constants.STATE_JUMP:
+                    sound.playSound(sound.jumpSound);
                     this.timers.jumpGrace = 0;
                     this.timers.varJump = constants.VAR_JUMP_TIME;
                     this.inputs.jumpPressedBuffer = false;
                     break;
                 case constants.STATE_DASH:
+                    sound.playSound(sound.dashSound);
                     this.timers.dashCooldown = constants.DASH_COOLDOWN;
                     this.timers.dash = constants.DASH_TIME + constants.DASH_FREEZE_TIME;
                     break;
                 case constants.STATE_DEAD:
+                    sound.playSound(sound.dieSound);
                     this.timers.dying = constants.DYING_TIME;
                     break;
                 case constants.STATE_BOUNCE:
