@@ -9,5 +9,11 @@
   background: linear-gradient(0deg, #585858, #FFFFFF44), url(images/forest.png);
   background-size: cover;
 }
+#game-screen #start-button {
+  position: absolute;
+  width: 10%;
+  top: 45%;
+  left: 50%;
+}
 
 /*# sourceMappingURL=style.css.map */

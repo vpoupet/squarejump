@@ -112,14 +112,21 @@ window.onload = function () {
     context.scale(SCALING, SCALING);
     context.imageSmoothingEnabled = false;
 
+    // Prepare button
+    document.getElementById("start-button").addEventListener("click", e => {
+        e.target.hidden = true;
+        start();
+    });
+
     // load all scenes and start game
     maps.loadScenes.then(() => {
         currentScene = maps.scenes.CELESTE_01;
         currentScene.spawnPointIndex = 1;
         currentScene.setPlayer(new player.Player());
         currentScene.reset();
-        document.getElementById("game-screen").addEventListener("click", () => { start(); });
+        document.getElementById("start-button").removeAttribute("disabled");
     });
+
 };
 
 

@@ -56,19 +56,23 @@ class PlayerInputs {
         this.xAxis = 0;
         this.yAxis = 0;
         if (pressedKeys.has(this.keymap.left) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.left].pressed)) {
+            (gamepad && gamepad.buttons[this.gamepadmap.left].pressed) ||
+            (gamepad && gamepad.axes[0] < -.2)) {
             this.xAxis -= 1;
         }
         if (pressedKeys.has(this.keymap.right) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.right].pressed)) {
+            (gamepad && gamepad.buttons[this.gamepadmap.right].pressed) ||
+            (gamepad && gamepad.axes[0] > .2)){
             this.xAxis += 1;
         }
         if (pressedKeys.has(this.keymap.up) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.up].pressed)) {
+            (gamepad && gamepad.buttons[this.gamepadmap.up].pressed) ||
+            (gamepad && gamepad.axes[1] < -.2)) {
             this.yAxis += 1;
         }
         if (pressedKeys.has(this.keymap.down) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.down].pressed)) {
+            (gamepad && gamepad.buttons[this.gamepadmap.down].pressed) ||
+            (gamepad && gamepad.axes[1] > .2)) {
             this.yAxis -= 1;
         }
         const prevJump = this.jumpHeld;
