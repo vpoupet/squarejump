@@ -5,7 +5,7 @@ const player = require('./player');
 const sound = require('./sound');
 const maps = require('./maps');
 
-const SCALING = 3;
+const SCALING = 2;
 let SLOWDOWN_FACTOR = 1;
 const FIXED_DELTA_TIME = true;
 const FRAME_RATE = 60;
@@ -65,7 +65,7 @@ function update() {
                 1 / FRAME_RATE :
                 Math.min((timeNow - lastUpdate) / (1000 * SLOWDOWN_FACTOR), .05);
 
-            context.clearRect(0, 0, SCALING * constants.VIEW_WIDTH, SCALING * constants.VIEW_HEIGHT);
+            context.clearRect(0, 0, currentScene.width, currentScene.height);
             currentScene.update(deltaTime);
 
             // Transition from one room to another
@@ -119,14 +119,15 @@ window.onload = function () {
     });
 
     // load all scenes and start game
-    maps.loadScenes.then(() => {
-        currentScene = maps.scenes.CELESTE_01;
-        currentScene.spawnPointIndex = 1;
-        currentScene.setPlayer(new player.Player());
-        currentScene.reset();
-        document.getElementById("start-button").removeAttribute("disabled");
+    player.loadAllSprites.then(() => {
+        maps.loadScenes.then(() => {
+            currentScene = maps.scenes.CELESTE_01;
+            currentScene.spawnPointIndex = 1;
+            currentScene.setPlayer(new player.Player());
+            currentScene.reset();
+            document.getElementById("start-button").removeAttribute("disabled");
+        })
     });
-
 };
 
 

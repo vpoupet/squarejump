@@ -2,21 +2,41 @@
 const inputs = require('./inputs');
 const physics = require('./physics');
 const constants = require('./constants');
-const sprites = require('./sprites');
 const sound = require('./sound');
 
 const ANIMATION_SLOWDOWN = 6;
-
 const ANIMATION_IDLE = [4, 4];
 const ANIMATION_RUN = [1, 6];
 const ANIMATION_JUMP = [6, 3];
 const ANIMATION_FALL = [5, 3];
 const ANIMATION_DIE = [0, 8];
 
+const spritesSheets = {};
+
+
+function loadSprites(color) {
+    return new Promise(resolve => {
+        const image = new Image();
+        image.addEventListener('load', () => {
+            spritesSheets[color] = image;
+            resolve();
+        });
+        image.src = `images/hero_${color}.png`;
+    });
+}
+
+
+const loadAllSprites = Promise.all([
+    loadSprites('red'),
+    loadSprites('green'),
+    loadSprites('blue'),
+]);
+
 
 class Player extends physics.Actor {
-    constructor(x = 0, y = 0) {
+    constructor(x = 0, y = 0, colorName = 'blue') {
         super(x, y, 8, 14);
+        this.colorName = colorName;
         this.speedX = 0;
         this.speedY = 0;
         this.dashSpeedX = 0;
@@ -50,9 +70,9 @@ class Player extends physics.Actor {
 
     draw(ctx) {
         const index = ~~(this.animation_counter / ANIMATION_SLOWDOWN);
-        const row = 2 * this.sprite_row + (this.sprite_direction === -1 ? 1 : 0);
+        const row = 4 * this.sprite_row + (this.nbDashes ? 0 : 2) + (this.sprite_direction === -1 ? 1 : 0);
         ctx.drawImage(
-            sprites.spritesSheet.canvas,
+            spritesSheets[this.colorName],
             16 * index, 16 * row,
             16, 16,
             this.x - 4, this.y - 2,
@@ -101,7 +121,7 @@ class Player extends physics.Actor {
 
         if (this.isGrounded) {
             this.timers.jumpGrace = constants.JUMP_GRACE_TIME;
-            if (this.state !== constants.STATE_DASH || this.dashSpeedY <= 0) {
+            if (this.state !== constants.STATE_DASH || this.dashSpeedY >= 0) {
                 this.restoreDash();
             }
         }
@@ -347,6 +367,7 @@ class Player extends physics.Actor {
         this.scene.setPlayer(undefined);
         transition.targetScene.setPlayer(this);
         transition.targetScene.spawnPointIndex = transition.spawnPointIndex;
+        this.restoreDash();
     }
 
     die() {
@@ -407,4 +428,5 @@ class Player extends physics.Actor {
 
 module.exports = {
     Player,
+    loadAllSprites,
 }
