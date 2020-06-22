@@ -121,7 +121,7 @@ class Player extends physics.Actor {
 
         if (this.isGrounded) {
             this.timers.jumpGrace = constants.JUMP_GRACE_TIME;
-            if (this.state !== constants.STATE_DASH || this.dashSpeedY >= 0) {
+            if (this.state !== constants.STATE_DASH) {
                 this.restoreDash();
             }
         }
@@ -232,7 +232,11 @@ class Player extends physics.Actor {
             // walljump
             this.inputs.jumpPressedBuffer = false;
             let dx = this.hasWallLeft ? 1 : -1;
-            this.speedX = dx * constants.WALL_JUMP_HSPEED;
+            if ((this.inputs.xAxis === 1 && this.hasWallRight) || (this.inputs.xAxis === -1 && this.hasWallLeft)) {
+                this.speedX = 0;
+            } else {
+                this.speedX = dx * constants.WALL_JUMP_HSPEED;
+            }
             this.speedY = -constants.JUMP_SPEED;
             this.setState(constants.STATE_JUMP);
             didJump = true;
