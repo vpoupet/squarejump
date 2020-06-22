@@ -5,12 +5,12 @@ const player = require('./player');
 const sound = require('./sound');
 const maps = require('./maps');
 
-const SCALING = 2;
+const SCALING = 3;
 let SLOWDOWN_FACTOR = 1;
 const FIXED_DELTA_TIME = true;
 const FRAME_RATE = 60;
 
-let context;
+const contextLayer = {};
 let currentScene;
 let lastUpdate = Date.now();
 let isRunning = false;
@@ -28,7 +28,7 @@ function slowdown(factor) {
 
 
 function setScroll(x, y) {
-    context.translate(scrollX - x, scrollY - y);
+    contextLayer.scene.translate(scrollX - x, scrollY - y);
     scrollX = x;
     scrollY = y;
 }
@@ -36,14 +36,12 @@ function setScroll(x, y) {
 
 function start() {
     isRunning = true;
-    sound.playSound(sound.music);
     update();
 }
 
 
 function stop() {
     isRunning = false;
-    music.stop();
 }
 
 
@@ -65,9 +63,7 @@ function update() {
                 1 / FRAME_RATE :
                 Math.min((timeNow - lastUpdate) / (1000 * SLOWDOWN_FACTOR), .05);
 
-            context.clearRect(0, 0, currentScene.width, currentScene.height);
             currentScene.update(deltaTime);
-
             // Transition from one room to another
             if (currentScene.transition) {
                 const prevScene = currentScene;
@@ -75,7 +71,20 @@ function update() {
                 prevScene.transition = undefined;
             }
             setScroll(currentScene.scrollX, currentScene.scrollY);
+
+            let context;
+            // clear and redraw on scene canvas
+            context = contextLayer.scene;
+            context.save();
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+            context.restore();
             currentScene.draw(context);
+
+            context = contextLayer.hud;
+            context.clearRect(0, 0, context.canvas.width / SCALING, context.canvas.height / SCALING);
+            currentScene.drawHUD(context);
+
             lastUpdate = timeNow;
         }
         requestAnimationFrame(update);
@@ -99,36 +108,43 @@ window.onload = function () {
     document.addEventListener('keyup', e => {
         inputs.pressedKeys.delete(e.key);
     });
+    document.getElementById("sound-button").addEventListener('click', toggleSound);
 
     // prepare canvas and context
     const screen = document.getElementById('game-screen');
     screen.style.width = `${constants.VIEW_WIDTH * SCALING}px`;
     screen.style.height = `${constants.VIEW_HEIGHT * SCALING}px`;
-    const canvas = document.getElementById("layer1");
-    context = canvas.getContext('2d');
 
-    canvas.width = SCALING * constants.VIEW_WIDTH;
-    canvas.height = SCALING * constants.VIEW_HEIGHT;
-    context.scale(SCALING, SCALING);
-    context.imageSmoothingEnabled = false;
-
-    // Prepare button
-    document.getElementById("start-button").addEventListener("click", e => {
-        e.target.hidden = true;
-        start();
-    });
+    for (const canvas of screen.getElementsByTagName("canvas")) {
+        const context = canvas.getContext('2d');
+        contextLayer[canvas.id] = context;
+        canvas.width = SCALING * constants.VIEW_WIDTH;
+        canvas.height = SCALING * constants.VIEW_HEIGHT;
+        context.scale(SCALING, SCALING);
+        context.imageSmoothingEnabled = false;
+    }
 
     // load all scenes and start game
     player.loadAllSprites.then(() => {
         maps.loadScenes.then(() => {
+            // load starting scene
             currentScene = maps.scenes.CELESTE_01;
             currentScene.spawnPointIndex = 1;
             currentScene.setPlayer(new player.Player());
             currentScene.reset();
-            document.getElementById("start-button").removeAttribute("disabled");
+            start();
         })
     });
 };
+
+
+function toggleSound() {
+    if (sound.toggleSound()) {
+        document.getElementById("sound-button").innerText = "Sound On";
+    } else {
+        document.getElementById("sound-button").innerText = "Sound Off";
+    }
+}
 
 
 // Gamepad API

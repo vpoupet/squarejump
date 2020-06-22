@@ -179,6 +179,16 @@ class Scene {
         }
     }
 
+    drawHUD(ctx) {
+        ctx.fillStyle = "#ffffffaa";
+        ctx.fillRect(1, 1, 42, 10);
+        ctx.fillStyle = "#000000";
+        ctx.textAlign = "right";
+        ctx.font = 'normal 6px gameboy';
+        ctx.fillText(`${this.player.strawberries.size + this.player.temporaryStrawberries.size}/15`, 40, 8);
+        ctx.drawImage(physics.tileset, 80, 16, 16, 16, 2, 2, 8, 8);
+    }
+
     setPlayer(player) {
         if (this.player) {
             this.removeActor(this.player);

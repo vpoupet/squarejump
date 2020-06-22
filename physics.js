@@ -92,6 +92,8 @@ class SceneElement {
          * initial y-coordinate (used for reset())
          */
         this.startY = y;
+        this.shiftX = 0;
+        this.shiftY = 0;
         /**
          * width of the SceneElement (in pixels)
          * @type {number}
@@ -162,6 +164,11 @@ class SceneElement {
          * @type {Set<SceneElement>}
          */
         this.attachedElements = new Set();
+        /**
+         * The SceneElement to which this is attached, if any
+         * @type {SceneElement}
+         */
+        this.attachedTo = undefined;
     }
 
     /**
@@ -186,11 +193,17 @@ class SceneElement {
      */
     draw(ctx) {
         if (this.tileData !== undefined) {
+            let shiftX = this.shiftX;
+            let shiftY = this.shiftY;
+            if (this.attachedTo) {
+                shiftX += this.attachedTo.shiftX;
+                shiftY += this.attachedTo.shiftY;
+            }
             ctx.drawImage(
                 tileset,
                 16 * this.tileData.x, 16 * this.tileData.y,
                 16, 16,
-                this.x + this.tileData.shiftX, this.y + this.tileData.shiftY,
+                this.x + this.tileData.shiftX + shiftX, this.y + this.tileData.shiftY + shiftY,
                 8, 8);
         }
     }
@@ -281,14 +294,16 @@ class SceneElement {
      */
     attach(element) {
         this.attachedElements.add(element);
+        element.attachedTo = this;
     }
 
     /**
      * Detaches a given SceneElement to this
      * @param element {SceneElement} the SceneElement to detach
      */
-    detach(elements) {
+    detach(element) {
         this.attachedElements.delete(element);
+        element.attachedTo = undefined;
     }
 }
 
@@ -416,7 +431,8 @@ class Actor extends SceneElement {
     /**
      * Method to call when the Actor collides with a Solid while being pushed by another
      */
-    squish() {}
+    squish() {
+    }
 }
 
 
@@ -843,11 +859,22 @@ class CrumblingBlock extends Solid {
 
 
 /**
- * TriggerBlocks are Solids that start moving when an Actor is carried by them
+ * TriggerBlocks are Solids that start moving when they carry an Actor
  */
 class TriggerBlock extends Solid {
-    constructor(x, y, width, height, movement) {
+    constructor(x, y, width, height, delay, movement) {
         super(x, y, width, height);
+        /**
+         * Whether the block has been triggered by an Actor but has not yet started executing the movement (during
+         * trigger delay)
+         * @type {boolean}
+         */
+        this.isTriggered = false;
+        /**
+         * Time delay before the movement starts when the block is triggered
+         * @type {number}
+         */
+        this.delay = delay;
         /**
          * movement to execute when triggered by an Actor
          * @type {Effect}
@@ -857,40 +884,80 @@ class TriggerBlock extends Solid {
          * Tile indexes to use when drawing the TriggerBlock on the Scene
          * @type {number[]}
          */
-        this.spriteIndexes = new Array((width / U) * (height / U)).fill(0).map(_ => Math.floor(Math.random() * 3));
+        this.spriteIndexes = new Array((width / U) * (height / U)).fill(0).map(_ => 64 + Math.floor(Math.random() * 4));
     }
 
     update(deltaTime) {
         super.update(deltaTime);
-        const player = this.scene.player;
-        if (player) {
-            if (this.effects.includes(this.triggeredMovement) && this.triggeredMovement.remainingCount === 0) {
-                this.removeEffect(this.triggeredMovement);
-            }
-            if (!this.effects.includes(this.triggeredMovement) && player.isRiding(this)) {
+        this.shiftX = 0;
+        this.shiftY = 0;
+        if (this.isTriggered) {
+            if (this.timers.trigger <= 0) {
+                this.isTriggered = false;
                 this.triggeredMovement.reset();
                 this.addEffect(this.triggeredMovement);
+            } else {
+                this.shiftX = Math.floor(Math.random() * 3) - 1;
+                this.shiftY = Math.floor(Math.random() * 3) - 1;
+            }
+        } else if (this.effects.includes(this.triggeredMovement)) {
+            if (this.triggeredMovement.remainingCount === 0) {
+                this.removeEffect(this.triggeredMovement);
+            }
+        } else {
+            let shouldTrigger = false;
+            for (const actor of this.scene.actors) {
+                if (actor.isRiding(this)) {
+                    shouldTrigger = true;
+                }
+            }
+            if (shouldTrigger) {
+                this.timers.trigger = this.delay;
+                this.isTriggered = true;
             }
         }
     }
 
     reset() {
         super.reset();
+        this.isTriggered = false;
         this.triggeredMovement.reset();
     }
 
     draw(ctx) {
         let index = 0;
-        for (let x = this.x; x < this.x + this.width; x += U) {
-            for (let y = this.y; y < this.y + this.height; y += U) {
+        for (let y = this.y; y < this.y + this.height; y += U) {
+            for (let x = this.x; x < this.x + this.width; x += U) {
                 ctx.drawImage(
                     tileset,
-                    16 * this.spriteIndexes[index], 16 * 8,
+                    16 * (this.spriteIndexes[index] % 8), 16 * ~~(this.spriteIndexes[index] / 8),
                     16, 16,
-                    x, y,
+                    x + this.shiftX, y + this.shiftY,
                     8, 8);
                 index += 1;
             }
+        }
+    }
+}
+
+
+class FallingBlock extends TriggerBlock {
+    constructor(x, y, width, height, delay, movement) {
+        super(x, y, width, height, delay, movement);
+        const w = width / U;
+        const h = height / U;
+        this.spriteIndexes.fill(9);
+        this.spriteIndexes[0] = 3;
+        this.spriteIndexes[w - 1] = 5;
+        this.spriteIndexes[w * (h - 1)] = 16;
+        this.spriteIndexes[w * h - 1] = 18;
+        for (let i = 1; i < w - 1; i++) {
+            this.spriteIndexes[i] = 4;
+            this.spriteIndexes[w * (h - 1) + i] = 17;
+        }
+        for (let i = 1; i < h - 1; i++) {
+            this.spriteIndexes[w * i] = 8;
+            this.spriteIndexes[w * i + (w - 1)] = 10;
         }
     }
 }
@@ -964,6 +1031,7 @@ class SpikesLeft extends SceneElement {
 
 module.exports = {
     segmentsOverlap,
+    tileset,
     TileData,
     Hazard,
     Solid,
@@ -974,6 +1042,7 @@ module.exports = {
     Strawberry,
     Transition,
     TriggerBlock,
+    FallingBlock,
     CrumblingBlock,
     SpikesUp,
     SpikesDown,

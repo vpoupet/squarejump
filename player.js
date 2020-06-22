@@ -75,7 +75,7 @@ class Player extends physics.Actor {
             spritesSheets[this.colorName],
             16 * index, 16 * row,
             16, 16,
-            this.x - 4, this.y - 2,
+            this.x - 4 + this.shiftX, this.y - 2 + this.shiftY,
             16, 16);
     }
 

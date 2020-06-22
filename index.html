@@ -7,9 +7,10 @@
 </head>
 <body>
 <div id="game-screen">
-    <canvas class="screen-layer" id="layer1"></canvas>
-    <button id="start-button" disabled>Start</button>
+    <canvas class="screen-layer" id="scene"></canvas>
+    <canvas class="screen-layer" id="hud"></canvas>
 </div>
+<div id="buttons"><button id="sound-button">Sound On</button></div>
 <div>
     <h2>Controls</h2>
     <ul>
@@ -17,8 +18,8 @@
         <li>G to jump</li>
         <li>F (+ direction) to dash</li>
     </ul>
+    (also works with most gamepads)
 </div>
-
 <script type="text/javascript" src="bundle.js"></script>
 </body>
 </html>
