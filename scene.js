@@ -55,7 +55,7 @@ class Scene {
 
                 switch (index - 1) {
                     case 21:
-                        scene.addThing(new physics.DashDiamond(x + U / 2, y + U / 2, tileData));
+                        scene.addThing(new physics.DashDiamond(x + U / 2, y + U / 2));
                         break;
                     case 31:
                         scene.spawnPoints.push({x: x, y: y});
@@ -69,16 +69,16 @@ class Scene {
                         scene.addSolid(new physics.Platform(x, y, U, tileData));
                         break;
                     case 40:
-                        scene.addThing(new physics.SpikesUp(x, y, tileData));
+                        scene.addThing(new physics.SpikesUp(x, y));
                         break;
                     case 41:
-                        scene.addThing(new physics.SpikesRight(x, y, tileData));
+                        scene.addThing(new physics.SpikesRight(x, y));
                         break;
                     case 42:
-                        scene.addThing(new physics.SpikesDown(x, y, tileData));
+                        scene.addThing(new physics.SpikesDown(x, y));
                         break;
                     case 43:
-                        scene.addThing(new physics.SpikesLeft(x, y, tileData));
+                        scene.addThing(new physics.SpikesLeft(x, y));
                         break;
                     case 49:
                     case 58:
@@ -88,10 +88,10 @@ class Scene {
                         scene.addThing(new physics.Hazard(x, y, U, U, tileData));
                         break;
                     case 13:
-                        scene.addThing(new physics.Strawberry(x + U / 2, y + U / 2, tileData));
+                        scene.addThing(new physics.Strawberry(x + U / 2, y + U / 2));
                         break;
                     case 57:
-                        scene.addSolid(new physics.CrumblingBlock(x, y, tileData));
+                        scene.addSolid(new physics.CrumblingBlock(x, y));
                         break;
                     case 50:
                     case 52:
@@ -185,7 +185,7 @@ class Scene {
         ctx.fillStyle = "#000000";
         ctx.textAlign = "right";
         ctx.font = 'normal 6px gameboy';
-        ctx.fillText(`${this.player.strawberries.size + this.player.temporaryStrawberries.size}/15`, 40, 8);
+        ctx.fillText(`${this.player.strawberries.size + this.player.temporaryStrawberries.size}/20`, 40, 8);
         ctx.drawImage(physics.tileset, 80, 16, 16, 16, 2, 2, 8, 8);
     }
 

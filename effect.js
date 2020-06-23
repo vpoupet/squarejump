@@ -74,8 +74,7 @@ class LinearMovement extends Effect {
         super.update(deltaTime, element);
         if (this.timer < this.duration) {
             const r = this.timer / this.duration;
-            element.moveTo((1 - r) * this.x1 + r * this.x2, (1 - r) * this.y1 + r * this.y2);
-            element.setMomentum(this.mx, this.my);
+            element.moveTo((1 - r) * this.x1 + r * this.x2, (1 - r) * this.y1 + r * this.y2, this.mx, this.my);
         } else {
             element.moveTo(this.x2, this.y2);
         }
@@ -98,11 +97,13 @@ class SineMovement extends Effect {
         if (this.timer < this.duration) {
             const angle = this.timer * 2 * Math.PI / this.duration;
             const ratio = (Math.cos(angle) + 1) / 2;
-            element.moveTo(ratio * this.x1 + (1 - ratio) * this.x2, ratio * this.y1 + (1 - ratio) * this.y2);
             const dratio = Math.PI * Math.sin(angle) / this.duration;
-            const mx = dratio * (this.x2 - this.x1);
-            const my = dratio * (this.y2 - this.y1);
-            element.setMomentum(mx, my);
+            element.moveTo(
+                ratio * this.x1 + (1 - ratio) * this.x2,
+                ratio * this.y1 + (1 - ratio) * this.y2,
+                dratio * (this.x2 - this.x1),
+                dratio * (this.y2 - this.y1)
+            );
         } else {
             element.moveTo(this.x1, this.y1);
         }

@@ -235,11 +235,13 @@ class SceneElement {
      * Moves the SceneElement by a given amount
      * @param dx {number} number of pixels to move right
      * @param dy {number} number of pixels to move down
+     * @param mx {number} momentum along the x-axis (optional)
+     * @param my {number} momentum along the y-axis (optional)
      */
-    move(dx, dy) {
+    move(dx, dy, mx = 0, my = 0) {
         // move all elements attached to this
         for (const thing of this.attachedElements) {
-            thing.move(dx, dy);
+            thing.move(dx, dy, mx, my);
         }
 
         // change position
@@ -261,8 +263,8 @@ class SceneElement {
      * @param x {number} x-coordinate of the target position
      * @param y {number} y-coordinate of the target position
      */
-    moveTo(x, y) {
-        this.move(x - this.x - this.xRemainder, y - this.y - this.yRemainder);
+    moveTo(x, y, mx, my) {
+        this.move(x - this.x - this.xRemainder, y - this.y - this.yRemainder, mx, my);
     }
 
     reset() {
@@ -314,6 +316,15 @@ class SceneElement {
 class Actor extends SceneElement {
     constructor(x, y, width, height) {
         super(x, y, width, height);
+        this.momentumX = 0;
+        this.momentumY = 0;
+        this.timers.momentumX = 0;
+        this.timers.momentumY = 0;
+    }
+
+    move(dx, dy, mx = 0, my = 0) {
+        this.moveX(dx);
+        this.moveY(dy);
     }
 
     /**
@@ -433,6 +444,20 @@ class Actor extends SceneElement {
      */
     squish() {
     }
+
+    setMomentumX(mx) {
+        if (mx) {
+            this.momentumX = mx;
+            this.timers.momentumX = constants.MOMENTUM_STORE_TIME;
+        }
+    }
+
+    setMomentumY(my) {
+        if (my) {
+            this.momentumY = my;
+            this.timers.momentumY = constants.MOMENTUM_STORE_TIME;
+        }
+    }
 }
 
 
@@ -454,50 +479,15 @@ class Solid extends SceneElement {
          */
         this.collidable = true;
         /**
-         * Momentum on the x-axis given to Actors riding the Solid (in pixels/s)
-         * @type {number}
-         */
-        this.momentumX = 0;
-        /**
-         * Momentum on the y-axis given to Actors riding the Solid (in pixels/s)
-         * @type {number}
-         */
-        this.momentumY = 0;
-        /**
-         * Timer used to store momentum for a few frames after the Solid stops moving
-         * @type {number}
-         */
-        this.timers.momentum = 0;
-        /**
          * Whether a Player character can climb on (or slowly slide against) the sides of the Solid
          * @type {boolean}
          */
         this.canBeClimbed = true;
     }
 
-    /**
-     * @returns {number} the momentum of the solid on the x-axis if the momentum counter has not expired (0 otherwise)
-     */
-    getMomentumX() {
-        if (this.timers.momentum > 0) {
-            return this.momentumX;
-        }
-        return 0;
-    }
-
-    /**
-     * @returns {number} the momentum of the solid on the x-axis if the momentum counter has not expired (0 otherwise)
-     */
-    getMomentumY() {
-        if (this.timers.momentum > 0) {
-            return this.momentumY;
-        }
-        return 0;
-    }
-
-    move(dx, dy) {
+    move(dx, dy, mx = 0, my = 0) {
         for (const thing of this.attachedElements) {
-            thing.move(dx, dy);
+            thing.move(dx, dy, mx, my);
         }
 
         this.xRemainder += dx;
@@ -524,13 +514,14 @@ class Solid extends SceneElement {
                         if (actor.isActive) {
                             if (this.overlaps(actor)) {
                                 actor.moveX(this.x + this.width - actor.x, () => actor.squish());
-
+                                actor.setMomentumX(mx);
                             } else if (riding.has(actor)) {
                                 if (actor.movedX <= 0) {
                                     actor.moveX(moveX);
                                 } else if (actor.movedX < moveX) {
                                     actor.moveX(moveX - actor.movedX);
                                 }
+                                actor.setMomentumX(mx);
                             }
                         }
                     }
@@ -539,12 +530,14 @@ class Solid extends SceneElement {
                         if (actor.isActive) {
                             if (this.overlaps(actor)) {
                                 actor.moveX(this.x - actor.x - actor.width, () => actor.squish());
+                                actor.setMomentumX(mx);
                             } else if (riding.has(actor)) {
                                 if (actor.movedX >= 0) {
                                     actor.moveX(moveX);
                                 } else if (actor.movedX > moveX) {
                                     actor.moveX(moveX - actor.movedX);
                                 }
+                                actor.setMomentumX(mx);
                             }
                         }
                     }
@@ -560,12 +553,14 @@ class Solid extends SceneElement {
                         if (actor.isActive) {
                             if (this.overlaps(actor)) {
                                 actor.moveY(this.y + this.height - actor.y, () => actor.squish());
+                                actor.setMomentumY(my);
                             } else if (riding.has(actor)) {
                                 if (actor.movedY <= 0) {
                                     actor.moveY(moveY);
                                 } else if (actor.movedY < moveY) {
                                     actor.moveY(moveY - actor.movedY);
                                 }
+                                actor.setMomentumY(my);
                             }
                         }
                     }
@@ -574,12 +569,14 @@ class Solid extends SceneElement {
                         if (actor.isActive) {
                             if (this.overlaps(actor)) {
                                 actor.moveY(this.y - actor.y - actor.height, () => actor.squish());
+                                actor.setMomentumY(my);
                             } else if (riding.has(actor)) {
                                 if (actor.movedY >= 0) {
                                     actor.moveY(moveY);
                                 } else if (actor.movedY > moveY) {
                                     actor.moveY(moveY - actor.movedY);
                                 }
+                                actor.setMomentumY(my);
                             }
                         }
                     }
@@ -587,12 +584,6 @@ class Solid extends SceneElement {
             }
             this.collidable = true;
         }
-    }
-
-    setMomentum(mx, my) {
-        this.timers.momentum = constants.MOMENTUM_STORE_TIME;
-        this.momentumX = mx;
-        this.momentumY = my;
     }
 
     /**
@@ -690,8 +681,8 @@ class Spring extends SceneElement {
  * DashDiamonds are SceneElements that restore the dash counter of the Players who touch them
  */
 class DashDiamond extends SceneElement {
-    constructor(x, y, tileData) {
-        super(x, y, U, U, tileData);
+    constructor(x, y) {
+        super(x, y, U, U, new TileData(21));
     }
 
     update(deltaTime) {
@@ -723,8 +714,8 @@ class DashDiamond extends SceneElement {
  * (and removed from the Player's list of collected Strawberries)
  */
 class Strawberry extends SceneElement {
-    constructor(x, y, tileData) {
-        super(x, y, U, U, tileData);
+    constructor(x, y) {
+        super(x, y, U, U, new TileData(13));
     }
 
     onContactWith(player) {
@@ -789,8 +780,8 @@ class Transition extends SceneElement {
  * They reappear after a given time (if there are no Actors on their position)
  */
 class CrumblingBlock extends Solid {
-    constructor(x, y, tileData) {
-        super(x, y, U, U, tileData);
+    constructor(x, y) {
+        super(x, y, U, U, new TileData(57));
         /**
          * Whether the block is disappearing
          * @type {boolean}
@@ -967,9 +958,8 @@ class FallingBlock extends TriggerBlock {
  * SpikesUp are Hazards that kill the Player if it moves downwards on them
  */
 class SpikesUp extends Hazard {
-    constructor(x, y, tileData) {
-        tileData.shiftY = -U / 2;
-        super(x, y + U / 2, U, U / 2, tileData);
+    constructor(x, y) {
+        super(x, y + U / 2, U, U / 2, new TileData(40, 0, -U / 2));
     }
 
     onContactWith(player) {
@@ -984,8 +974,8 @@ class SpikesUp extends Hazard {
  * SpikesDown are Hazards that kill the Player if it moves upwards on them
  */
 class SpikesDown extends SceneElement {
-    constructor(x, y, tileData) {
-        super(x, y, U, U / 2, tileData);
+    constructor(x, y) {
+        super(x, y, U, U / 2, new TileData(42));
     }
 
     onContactWith(player) {
@@ -1000,8 +990,8 @@ class SpikesDown extends SceneElement {
  * SpikesRight are Hazards that kill the Player if it moves leftwards on them
  */
 class SpikesRight extends SceneElement {
-    constructor(x, y, tileData) {
-        super(x, y, U / 2, U, tileData);
+    constructor(x, y) {
+        super(x, y, U / 2, U, new TileData(41));
     }
 
     onContactWith(player) {
@@ -1017,8 +1007,7 @@ class SpikesRight extends SceneElement {
  */
 class SpikesLeft extends SceneElement {
     constructor(x, y, tileData) {
-        tileData.shiftX = -U / 2;
-        super(x + U / 2, y, U / 2, U, tileData);
+        super(x + U / 2, y, U / 2, U, new TileData(43, -U / 2, 0));
     }
 
     onContactWith(player) {

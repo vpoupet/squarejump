@@ -242,16 +242,12 @@ class Player extends physics.Actor {
             didJump = true;
         }
         if (didJump) {
-            let mx = 0;
-            let my = 0;
-            for (const solid of this.carryingSolids) {
-                const sx = solid.getMomentumX();
-                const sy = solid.getMomentumY();
-                if (Math.abs(sx) > Math.abs(mx)) mx = sx;
-                if (Math.abs(sy) > Math.abs(my)) my = sy;
+            if (this.timers.momentumX > 0) {
+                this.speedX += constants.MOMENTUM_FACTOR * this.momentumX;
             }
-            this.speedX += constants.MOMENTUM_FACTOR * mx;
-            this.speedY += constants.MOMENTUM_FACTOR * my;
+            if (this.timers.momentumY > 0) {
+                this.speedY += constants.MOMENTUM_FACTOR * this.momentumY;
+            }
         }
         return didJump;
     }
