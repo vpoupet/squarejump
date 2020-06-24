@@ -1,49 +1,9 @@
 "use strict";
 const constants = require('./constants');
+const graphics = require('./graphics');
 const sound = require('./sound');
 
 const U = constants.GRID_SIZE;
-
-/**
- * Tiles sheet
- * @type {HTMLImageElement}
- */
-const tileset = new Image();
-tileset.src = 'tilemaps/tileset.png';
-
-
-/**
- * Information about the tile to be used when representing an element of the scene
- */
-class TileData {
-    constructor(index, shiftX = 0, shiftY = 0) {
-        /**
-         * Index of the tile in the tileset
-         * @type {number}
-         */
-        this.index = index;
-        /**
-         * x-position of the tile in the tileset
-         * @type {number}
-         */
-        this.x = this.index % 8;
-        /**
-         * y-position of the tile in the tileset
-         * @type {number}
-         */
-        this.y = this.index >> 3;
-        /**
-         * x-offset to draw the tile from the SceneElement's position
-         * @type {number}
-         */
-        this.shiftX = shiftX;
-        /**
-         * y-offset to draw the tile from the SceneElement's position
-         * @type {number}
-         */
-        this.shiftY = shiftY;
-    }
-}
 
 
 /**
@@ -200,7 +160,7 @@ class SceneElement {
                 shiftY += this.attachedTo.shiftY;
             }
             ctx.drawImage(
-                tileset,
+                graphics.sheets.tiles,
                 16 * this.tileData.x, 16 * this.tileData.y,
                 16, 16,
                 this.x + this.tileData.shiftX + shiftX, this.y + this.tileData.shiftY + shiftY,
@@ -682,7 +642,7 @@ class Spring extends SceneElement {
  */
 class DashDiamond extends SceneElement {
     constructor(x, y) {
-        super(x, y, U, U, new TileData(21));
+        super(x, y, U, U, new graphics.TileData(21));
     }
 
     update(deltaTime) {
@@ -715,7 +675,7 @@ class DashDiamond extends SceneElement {
  */
 class Strawberry extends SceneElement {
     constructor(x, y) {
-        super(x, y, U, U, new TileData(13));
+        super(x, y, U, U, new graphics.TileData(13));
     }
 
     onContactWith(player) {
@@ -781,7 +741,7 @@ class Transition extends SceneElement {
  */
 class CrumblingBlock extends Solid {
     constructor(x, y) {
-        super(x, y, U, U, new TileData(57));
+        super(x, y, U, U, new graphics.TileData(57));
         /**
          * Whether the block is disappearing
          * @type {boolean}
@@ -920,7 +880,7 @@ class TriggerBlock extends Solid {
         for (let y = this.y; y < this.y + this.height; y += U) {
             for (let x = this.x; x < this.x + this.width; x += U) {
                 ctx.drawImage(
-                    tileset,
+                    graphics.sheets.tiles,
                     16 * (this.spriteIndexes[index] % 8), 16 * ~~(this.spriteIndexes[index] / 8),
                     16, 16,
                     x + this.shiftX, y + this.shiftY,
@@ -959,7 +919,7 @@ class FallingBlock extends TriggerBlock {
  */
 class SpikesUp extends Hazard {
     constructor(x, y) {
-        super(x, y + U / 2, U, U / 2, new TileData(40, 0, -U / 2));
+        super(x, y + U / 2, U, U / 2, new graphics.TileData(40, 0, -U / 2));
     }
 
     onContactWith(player) {
@@ -975,7 +935,7 @@ class SpikesUp extends Hazard {
  */
 class SpikesDown extends SceneElement {
     constructor(x, y) {
-        super(x, y, U, U / 2, new TileData(42));
+        super(x, y, U, U / 2, new graphics.TileData(42));
     }
 
     onContactWith(player) {
@@ -991,7 +951,7 @@ class SpikesDown extends SceneElement {
  */
 class SpikesRight extends SceneElement {
     constructor(x, y) {
-        super(x, y, U / 2, U, new TileData(41));
+        super(x, y, U / 2, U, new graphics.TileData(41));
     }
 
     onContactWith(player) {
@@ -1007,7 +967,7 @@ class SpikesRight extends SceneElement {
  */
 class SpikesLeft extends SceneElement {
     constructor(x, y, tileData) {
-        super(x + U / 2, y, U / 2, U, new TileData(43, -U / 2, 0));
+        super(x + U / 2, y, U / 2, U, new graphics.TileData(43, -U / 2, 0));
     }
 
     onContactWith(player) {
@@ -1020,8 +980,6 @@ class SpikesLeft extends SceneElement {
 
 module.exports = {
     segmentsOverlap,
-    tileset,
-    TileData,
     Hazard,
     Solid,
     Actor,

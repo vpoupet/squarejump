@@ -1,7 +1,9 @@
 "use strict";
-const physics = require('./physics');
 const constants = require('./constants');
+const graphics = require('./graphics');
+const physics = require('./physics');
 const U = constants.GRID_SIZE;
+
 
 class Scene {
     constructor(width, height) {
@@ -46,12 +48,7 @@ class Scene {
             if (index !== 0) {
                 const x = (i % mainLayer.width) * U;
                 const y = ~~(i / mainLayer.width) * U;
-                const tileData = {
-                    x: (index - 1) % 8,
-                    y: ~~((index - 1) / 8),
-                    shiftX: 0,
-                    shiftY: 0,
-                };
+                const tileData = new graphics.TileData(index - 1);
 
                 switch (index - 1) {
                     case 21:
@@ -186,7 +183,7 @@ class Scene {
         ctx.textAlign = "right";
         ctx.font = 'normal 6px gameboy';
         ctx.fillText(`${this.player.strawberries.size + this.player.temporaryStrawberries.size}/20`, 40, 8);
-        ctx.drawImage(physics.tileset, 80, 16, 16, 16, 2, 2, 8, 8);
+        ctx.drawImage(graphics.sheets.tiles, 80, 16, 16, 16, 2, 2, 8, 8);
     }
 
     setPlayer(player) {

@@ -1,9 +1,11 @@
 "use strict";
+
 const JUMP_BUFFER_TIME = .1;
 const DASH_BUFFER_TIME = .1;
 let pressedKeys = new Set();
 let pressedButtons = new Set();
 let gamepadPressedButtons = [];
+
 
 class PlayerInputs {
     constructor() {
@@ -36,7 +38,7 @@ class PlayerInputs {
 
     updateGamepad() {
         pressedButtons.clear();
-        const gamepad = navigator.getGamepads()[this.gamepadIndex];
+        const gamepad = navigator.getGamepads().find(c => c.index = this.gamepadIndex);
         if (gamepad) {
             for (let j = 0; j < gamepad.buttons; j++) {
                 if (gamepad.buttons[j].pressed) {
@@ -97,8 +99,27 @@ class PlayerInputs {
 }
 
 
+function waitForGamepadButton() {
+    let pressedButtonIndex = undefined;
+    for (const gamepad of navigator.getGamepads()) {
+        if (gamepad !== null) {
+            for (let i = 0; i < gamepad.buttons.length; i++) {
+                if (gamepad.buttons[i].pressed) {
+                    pressedButtonIndex = i;
+                    console.log(pressedButtonIndex);
+                }
+            }
+        }
+    }
+    if (pressedButtonIndex === undefined) {
+        requestAnimationFrame(waitForGamepadButton);
+    }
+}
+
+
 module.exports = {
     PlayerInputs,
     gamepadPressedButtons,
     pressedKeys,
+    waitForGamepadButton,
 }

@@ -1,6 +1,5 @@
 "use strict";
 
-
 class Effect {
     constructor(duration, count = 1) {
         this.duration = duration;

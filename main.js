@@ -1,9 +1,10 @@
 "use strict";
 const constants = require('./constants');
+const graphics = require('./graphics');
 const inputs = require('./inputs');
+const maps = require('./maps_');
 const player = require('./player');
 const sound = require('./sound');
-const maps = require('./maps');
 
 const SCALING = 3;
 let SLOWDOWN_FACTOR = 1;
@@ -20,6 +21,7 @@ let frameRateStartTime = Date.now();
 let slowdownCounter = 0;
 let scrollX = 0;
 let scrollY = 0;
+
 
 function slowdown(factor) {
     SLOWDOWN_FACTOR = factor;
@@ -82,7 +84,7 @@ function update() {
             currentScene.draw(context);
 
             context = contextLayer.hud;
-            context.clearRect(0, 0, context.canvas.width / SCALING, context.canvas.height / SCALING);
+            context.clearRect(0, 0, constants.VIEW_WIDTH, constants.VIEW_HEIGHT);
             currentScene.drawHUD(context);
 
             lastUpdate = timeNow;
@@ -90,6 +92,7 @@ function update() {
         requestAnimationFrame(update);
     }
 }
+
 
 window.onload = function () {
     // keyboard events
@@ -101,6 +104,14 @@ window.onload = function () {
                     slowdown(8);
                 } else {
                     slowdown(1);
+                }
+                break;
+            case 'p':
+                isRunning = !isRunning;
+                if (isRunning) {
+                    update();
+                } else {
+                    displayMessage("Paused");
                 }
                 break;
         }
@@ -125,15 +136,12 @@ window.onload = function () {
     }
 
     // load all scenes and start game
-    player.loadAllSprites.then(() => {
-        maps.loadScenes.then(() => {
-            // load starting scene
-            currentScene = maps.scenes.CELESTE_01;
-            currentScene.spawnPointIndex = 1;
-            currentScene.setPlayer(new player.Player());
-            currentScene.reset();
-            start();
-        })
+    graphics.loadGraphics.then(() => {
+        currentScene = maps.scenes.celeste01;
+        currentScene.spawnPointIndex = 1;
+        currentScene.setPlayer(new player.Player());
+        currentScene.reset();
+        start();
     });
 };
 
@@ -147,12 +155,32 @@ function toggleSound() {
 }
 
 
+function displayMessage(message) {
+    const ctx = contextLayer.hud;
+
+    ctx.clearRect(0, 0, constants.VIEW_WIDTH, constants.VIEW_HEIGHT);
+    ctx.font = 'normal 12px gameboy';
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "#ffffffaa";
+    const textMetrics = ctx.measureText(message);
+    ctx.fillRect(
+        constants.VIEW_WIDTH / 2 - textMetrics.actualBoundingBoxLeft - 5,
+        constants.VIEW_HEIGHT / 2 - textMetrics.actualBoundingBoxAscent - 5,
+        textMetrics.actualBoundingBoxRight + textMetrics.actualBoundingBoxLeft + 10,
+        textMetrics.actualBoundingBoxDescent + textMetrics.actualBoundingBoxAscent + 10);
+    ctx.fillStyle = "#000000";
+    ctx.fillText(message, constants.VIEW_WIDTH / 2, constants.VIEW_HEIGHT / 2);
+}
+
+
 // Gamepad API
 window.addEventListener("gamepadconnected", (event) => {
     console.log("A gamepad connected:");
     console.log(event.gamepad);
     inputs.gamepadPressedButtons[event.gamepad.index] = new Set();
 });
+
 
 window.addEventListener("gamepaddisconnected", (event) => {
     console.log("A gamepad disconnected:");

@@ -3,6 +3,7 @@ const inputs = require('./inputs');
 const physics = require('./physics');
 const constants = require('./constants');
 const sound = require('./sound');
+const graphics = require('./graphics');
 
 const ANIMATION_SLOWDOWN = 6;
 const ANIMATION_IDLE = [4, 4];
@@ -11,32 +12,11 @@ const ANIMATION_JUMP = [6, 3];
 const ANIMATION_FALL = [5, 3];
 const ANIMATION_DIE = [0, 8];
 
-const spritesSheets = {};
-
-
-function loadSprites(color) {
-    return new Promise(resolve => {
-        const image = new Image();
-        image.addEventListener('load', () => {
-            spritesSheets[color] = image;
-            resolve();
-        });
-        image.src = `images/hero_${color}.png`;
-    });
-}
-
-
-const loadAllSprites = Promise.all([
-    loadSprites('red'),
-    loadSprites('green'),
-    loadSprites('blue'),
-]);
-
 
 class Player extends physics.Actor {
-    constructor(x = 0, y = 0, colorName = 'blue') {
+    constructor(x = 0, y = 0, spriteSheet = 'hero_blue') {
         super(x, y, 8, 14);
-        this.colorName = colorName;
+        this.spriteSheet = spriteSheet;
         this.speedX = 0;
         this.speedY = 0;
         this.dashSpeedX = 0;
@@ -72,7 +52,7 @@ class Player extends physics.Actor {
         const index = ~~(this.animation_counter / ANIMATION_SLOWDOWN);
         const row = 4 * this.sprite_row + (this.nbDashes ? 0 : 2) + (this.sprite_direction === -1 ? 1 : 0);
         ctx.drawImage(
-            spritesSheets[this.colorName],
+            graphics.sheets[this.spriteSheet],
             16 * index, 16 * row,
             16, 16,
             this.x - 4 + this.shiftX, this.y - 2 + this.shiftY,
@@ -428,5 +408,4 @@ class Player extends physics.Actor {
 
 module.exports = {
     Player,
-    loadAllSprites,
 }
