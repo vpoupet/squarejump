@@ -142,7 +142,7 @@ class Player extends physics.Actor {
                 this.updateVerticalMovement(deltaTime);
                 break;
             case constants.STATE_JUMP:
-                if (this.inputs.jumpHeld && this.timers.varJump > 0) {
+                if (this.inputs.isPressed("jump") && this.timers.varJump > 0) {
                     this.speedY = Math.min(this.speedY, -constants.JUMP_SPEED);
                 } else {
                     this.setState(constants.STATE_NORMAL);
@@ -181,7 +181,8 @@ class Player extends physics.Actor {
 
     tryUpdateDash(deltaTime) {
         if (this.nbDashes > 0 &&
-            this.inputs.dashPressedBuffer &&
+            this.inputs.isPressed("dash") &&
+            this.inputs.timers.dashBuffer > 0 &&
             this.timers.dashCooldown <= 0 &&
             (this.inputs.xAxis || this.inputs.yAxis)
         ) {
@@ -190,7 +191,6 @@ class Player extends physics.Actor {
             this.dashSpeedY = -this.inputs.yAxis * dashSpeed;
             this.speedX = 0;
             this.speedY = 0;
-            this.inputs.dashPressedBuffer = false;
             this.timers.dashCooldown = constants.DASH_COOLDOWN + constants.DASH_FREEZE_TIME;
             this.setState(constants.STATE_DASH);
             this.nbDashes -= 1;
@@ -201,16 +201,19 @@ class Player extends physics.Actor {
 
     tryUpdateJump(deltaTime) {
         let didJump = false;
-        if (this.inputs.jumpPressedBuffer && this.timers.jumpGrace > 0) {
+        if (this.inputs.isPressed("jump") &&
+            this.inputs.timers.jumpBuffer > 0 &&
+            this.timers.jumpGrace > 0) {
             // regular jump
-            this.inputs.jumpPressedBuffer = false;
             this.speedX += this.inputs.xAxis * constants.JUMP_HORIZONTAL_BOOST;
             this.speedY = -constants.JUMP_SPEED;
             this.setState(constants.STATE_JUMP);
             didJump = true;
-        } else if (this.inputs.jumpPressedBuffer && (this.hasWallLeft || this.hasWallRight)) {
+        } else if (
+            this.inputs.isPressed("jump") &&
+            this.inputs.timers.jumpBuffer > 0 &&
+            (this.hasWallLeft || this.hasWallRight)) {
             // walljump
-            this.inputs.jumpPressedBuffer = false;
             let dx = this.hasWallLeft ? 1 : -1;
             if ((this.inputs.xAxis === 1 && this.hasWallRight) || (this.inputs.xAxis === -1 && this.hasWallLeft)) {
                 this.speedX = 0;
@@ -317,11 +320,12 @@ class Player extends physics.Actor {
                 case constants.STATE_JUMP:
                     sound.playSound(sound.jumpSound);
                     this.timers.jumpGrace = 0;
+                    this.inputs.timers.jumpBuffer = 0;
                     this.timers.varJump = constants.VAR_JUMP_TIME;
-                    this.inputs.jumpPressedBuffer = false;
                     break;
                 case constants.STATE_DASH:
                     sound.playSound(sound.dashSound);
+                    this.inputs.timers.dashBuffer = 0;
                     this.timers.dashCooldown = constants.DASH_COOLDOWN;
                     this.timers.dash = constants.DASH_TIME + constants.DASH_FREEZE_TIME;
                     break;

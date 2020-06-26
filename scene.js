@@ -27,6 +27,7 @@ class Scene {
         this.player = undefined;
         this.spawnPointIndex = 0;
         this.shouldReset = false;
+        this.isRunning = true;
     }
 
     static fromJSON(data) {
@@ -104,50 +105,54 @@ class Scene {
     }
 
     update(deltaTime) {
-        for (const solid of this.solids) {
-            solid.beforeUpdate(deltaTime);
-        }
-        for (const thing of this.things) {
-            thing.beforeUpdate(deltaTime);
-        }
-        for (const actor of this.actors) {
-            actor.beforeUpdate(deltaTime);
-        }
-
-        for (const solid of this.solids) {
-            solid.update(deltaTime);
-        }
-        for (const thing of this.things) {
-            thing.update(deltaTime);
-        }
-        for (const actor of this.actors) {
-            actor.update(deltaTime);
-        }
-
-        // scroll view
-        if (this.player) {
-            if (this.player.x - this.scrollX > .60 * constants.VIEW_WIDTH) {
-                this.scrollX = Math.min(
-                    this.width - constants.VIEW_WIDTH,
-                    this.player.x - .60 * constants.VIEW_WIDTH);
-            } else if (this.player.x - this.scrollX < .40 * constants.VIEW_WIDTH) {
-                this.scrollX = Math.max(
-                    0,
-                    this.player.x - .40 * constants.VIEW_WIDTH);
+        if (this.isRunning) {
+            // update all elements
+            for (const solid of this.solids) {
+                solid.beforeUpdate(deltaTime);
             }
-            if (this.player.y - this.scrollY > .60 * constants.VIEW_HEIGHT) {
-                this.scrollY = Math.min(
-                    this.height - constants.VIEW_HEIGHT,
-                    this.player.y - .60 * constants.VIEW_HEIGHT);
-            } else if (this.player.y - this.scrollY < .40 * constants.VIEW_HEIGHT) {
-                this.scrollY = Math.max(
-                    U / 2,
-                    this.player.y - .40 * constants.VIEW_HEIGHT);
+            for (const thing of this.things) {
+                thing.beforeUpdate(deltaTime);
             }
-        }
+            for (const actor of this.actors) {
+                actor.beforeUpdate(deltaTime);
+            }
 
-        if (this.shouldReset) {
-            this.reset();
+            for (const solid of this.solids) {
+                solid.update(deltaTime);
+            }
+            for (const thing of this.things) {
+                thing.update(deltaTime);
+            }
+            for (const actor of this.actors) {
+                actor.update(deltaTime);
+            }
+
+            // scroll view
+            if (this.player) {
+                if (this.player.x - this.scrollX > .60 * constants.VIEW_WIDTH) {
+                    this.scrollX = Math.min(
+                        this.width - constants.VIEW_WIDTH,
+                        this.player.x - .60 * constants.VIEW_WIDTH);
+                } else if (this.player.x - this.scrollX < .40 * constants.VIEW_WIDTH) {
+                    this.scrollX = Math.max(
+                        0,
+                        this.player.x - .40 * constants.VIEW_WIDTH);
+                }
+                if (this.player.y - this.scrollY > .60 * constants.VIEW_HEIGHT) {
+                    this.scrollY = Math.min(
+                        this.height - constants.VIEW_HEIGHT,
+                        this.player.y - .60 * constants.VIEW_HEIGHT);
+                } else if (this.player.y - this.scrollY < .40 * constants.VIEW_HEIGHT) {
+                    this.scrollY = Math.max(
+                        U / 2,
+                        this.player.y - .40 * constants.VIEW_HEIGHT);
+                }
+            }
+
+            // reset scene if needed
+            if (this.shouldReset) {
+                this.reset();
+            }
         }
     }
 

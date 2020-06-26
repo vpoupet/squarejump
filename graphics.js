@@ -1,4 +1,5 @@
 const sheets = {};
+const contextLayer = {};
 
 /**
  * Information about the tile to be used when representing an element of the scene
@@ -59,4 +60,5 @@ module.exports = {
     TileData,
     sheets,
     loadGraphics,
+    contextLayer,
 }

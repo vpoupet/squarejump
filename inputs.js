@@ -2,31 +2,79 @@
 
 const JUMP_BUFFER_TIME = .1;
 const DASH_BUFFER_TIME = .1;
+const AXES_THRESHOLD = .4;
+
 let pressedKeys = new Set();
-let pressedButtons = new Set();
-let gamepadPressedButtons = [];
+let previouslyPressedKeys;
+let currentlyPressedKeys = new Set();
+let previouslyPressedButtons = [];
+let currentlyPressedButtons = [];
+
+
+function gamepadConnected(gamepad) {
+    currentlyPressedButtons[gamepad.index] = new Set();
+}
+
+
+function gamepadDisconnected(gamepad) {
+    currentlyPressedButtons[gamepad.index] = undefined;
+}
+
+
+function updateInputs() {
+    previouslyPressedKeys = currentlyPressedKeys;
+    currentlyPressedKeys = new Set(pressedKeys);
+    previouslyPressedButtons = currentlyPressedButtons;
+    currentlyPressedButtons = [];
+    for (const gamepad of navigator.getGamepads()) {
+        if (gamepad) {
+            const i = gamepad.index;
+            currentlyPressedButtons[i] = new Set();
+            for (let j = 0; j < gamepad.buttons.length; j++) {
+                if (gamepad.buttons[j].pressed) {
+                    currentlyPressedButtons[i].add(j);
+                    if (!previouslyPressedButtons[i].has(j)) {
+                        console.log(j);
+                    }
+                }
+            }
+            for (let j = 0; j < gamepad.axes.length; j++) {
+                let buttonIndex = 0;
+                if (gamepad.axes[j] > AXES_THRESHOLD) {
+                    buttonIndex = 2 * j + gamepad.buttons.length;
+                } else if (gamepad.axes[j] < -AXES_THRESHOLD) {
+                    buttonIndex = 2 * j + gamepad.buttons.length + 1;
+                }
+                if (buttonIndex) {
+                    currentlyPressedButtons[i].add(buttonIndex);
+                    if (!previouslyPressedButtons[i].has(buttonIndex)) {
+                        console.log(buttonIndex);
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 class PlayerInputs {
     constructor() {
         this.xAxis = 0;
         this.yAxis = 0;
-        this.jumpPressedBuffer = false;
-        this.jumpHeld = false;
         this.gamepadIndex = 0;
         this.gamepadmap = {
-            jump: 0,
-            dash: 1,
             up: 12,
             down: 13,
             left: 14,
             right: 15,
+            jump: 0,
+            dash: 1,
         }
         this.keymap = {
-            right: 'ArrowRight',
-            left: 'ArrowLeft',
             up: 'ArrowUp',
             down: 'ArrowDown',
+            left: 'ArrowLeft',
+            right: 'ArrowRight',
             jump: 'g',
             dash: 'f',
         }
@@ -36,65 +84,35 @@ class PlayerInputs {
         };
     }
 
-    updateGamepad() {
-        pressedButtons.clear();
-        const gamepad = navigator.getGamepads().find(c => c.index = this.gamepadIndex);
-        if (gamepad) {
-            for (let j = 0; j < gamepad.buttons; j++) {
-                if (gamepad.buttons[j].pressed) {
-                    pressedButtons.add(j);
-                }
-            }
-        }
+    isPressed(action) {
+        return currentlyPressedKeys.has(this.keymap[action]) ||
+            (
+                currentlyPressedButtons[this.gamepadIndex] &&
+                currentlyPressedButtons[this.gamepadIndex].has(this.gamepadmap[action])
+            );
+    }
+
+    isPreviouslyPressed(action) {
+        return previouslyPressedKeys.has(this.keymap[action]) ||
+            (
+                previouslyPressedButtons[this.gamepadIndex] &&
+                previouslyPressedButtons[this.gamepadIndex].has(this.gamepadmap[action])
+            );
     }
 
     update(deltaTime) {
-        const gamepad = navigator.getGamepads()[this.gamepadIndex];
-        // this.updateGamepad();
-
         for (const t in this.timers) {
             this.timers[t] -= deltaTime;
         }
-        this.xAxis = 0;
-        this.yAxis = 0;
-        if (pressedKeys.has(this.keymap.left) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.left].pressed) ||
-            (gamepad && gamepad.axes[0] < -.2)) {
-            this.xAxis -= 1;
-        }
-        if (pressedKeys.has(this.keymap.right) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.right].pressed) ||
-            (gamepad && gamepad.axes[0] > .2)){
-            this.xAxis += 1;
-        }
-        if (pressedKeys.has(this.keymap.up) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.up].pressed) ||
-            (gamepad && gamepad.axes[1] < -.2)) {
-            this.yAxis += 1;
-        }
-        if (pressedKeys.has(this.keymap.down) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.down].pressed) ||
-            (gamepad && gamepad.axes[1] > .2)) {
-            this.yAxis -= 1;
-        }
-        const prevJump = this.jumpHeld;
-        this.jumpHeld = pressedKeys.has(this.keymap.jump) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.jump].pressed);
-        if (!prevJump && this.jumpHeld) {
-            this.timers.jumpBuffer = JUMP_BUFFER_TIME;
-            this.jumpPressedBuffer = true;
-        } else {
-            this.jumpPressedBuffer &= this.timers.jumpBuffer > 0;
-        }
 
-        const prevDash = this.dashHeld;
-        this.dashHeld = pressedKeys.has(this.keymap.dash) ||
-            (gamepad && gamepad.buttons[this.gamepadmap.dash].pressed);
-        if (!prevDash && this.dashHeld) {
-            this.timers.dashBuffer = DASH_BUFFER_TIME;
-            this.dashPressedBuffer = true;
+        this.xAxis = (this.isPressed("left") ? -1 : 0) + (this.isPressed("right") ? 1 : 0);
+        this.yAxis = (this.isPressed("up") ? 1 : 0) + (this.isPressed("down") ? -1 : 0);
+        if (!this.isPreviouslyPressed("jump") && this.isPressed("jump")) {
+            this.timers.jumpBuffer = JUMP_BUFFER_TIME;
         }
-        this.dashPressedBuffer = this.dashPressedBuffer && (this.timers.dashBuffer > 0);
+        if (!this.isPreviouslyPressed("dash") && this.isPressed("dash")) {
+            this.timers.dashBuffer = DASH_BUFFER_TIME;
+        }
     }
 }
 
@@ -119,7 +137,9 @@ function waitForGamepadButton() {
 
 module.exports = {
     PlayerInputs,
-    gamepadPressedButtons,
+    gamepadConnected,
+    gamepadDisconnected,
+    updateInputs,
     pressedKeys,
     waitForGamepadButton,
 }
