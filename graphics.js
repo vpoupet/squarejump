@@ -1,5 +1,4 @@
 const sheets = {};
-const contextLayer = {};
 
 /**
  * Information about the tile to be used when representing an element of the scene
@@ -48,10 +47,9 @@ function loadSheet(url, name) {
 
 
 const loadGraphics = Promise.all([
-    loadSheet('images/hero_red.png', 'hero_red'),
-    loadSheet('images/hero_green.png', 'hero_green'),
-    loadSheet('images/hero_blue.png', 'hero_blue'),
-    loadSheet('images/hero_red.png', 'hero_red'),
+    loadSheet('images/hero_red.png', 'red'),
+    loadSheet('images/hero_green.png', 'green'),
+    loadSheet('images/hero_blue.png', 'blue'),
     loadSheet('images/tileset.png', 'tiles'),
 ]);
 
@@ -60,5 +58,4 @@ module.exports = {
     TileData,
     sheets,
     loadGraphics,
-    contextLayer,
 }

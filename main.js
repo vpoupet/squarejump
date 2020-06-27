@@ -1,27 +1,30 @@
 "use strict";
 const constants = require('./constants');
+const globals = require('./globals');
 const graphics = require('./graphics');
 const inputs = require('./inputs');
 const maps = require('./maps_');
 const menu = require('./menu');
 const player = require('./player');
-const sound = require('./sound');
-
-const SCALING = 3;
 
 let currentScene;
-let menuStack = [];
+let context;
 let frameCounter = 0;
 let frameRateRefresh = 5;
 let frameRateStartTime = Date.now();
-let scrollX = 0;
-let scrollY = 0;
 
 
-function setScroll(x, y) {
-    graphics.contextLayer.scene.translate(scrollX - x, scrollY - y);
-    scrollX = x;
-    scrollY = y;
+function setScaling(scale) {
+    globals.scaling = scale;
+    const screen = document.getElementById('game-screen');
+    screen.style.width = `${constants.VIEW_WIDTH * scale}px`;
+    screen.style.height = `${constants.VIEW_HEIGHT * scale}px`;
+
+    const canvas = document.getElementById("screen-canvas");
+    canvas.width = scale * constants.VIEW_WIDTH;
+    canvas.height = scale * constants.VIEW_HEIGHT;
+    context.setTransform(scale, 0, 0, scale, 0, 0);
+    context.scale(globals.scaling, globals.scaling);
 }
 
 
@@ -36,9 +39,13 @@ function update() {
     }
 
     inputs.updateInputs();
-    if (menuStack.length > 0) {
-        menuStack[0].update();
-        menuStack[0].draw(graphics.contextLayer.menu);
+    for (const player of globals.players) {
+        player.update();
+    }
+    context.clearRect(0, 0, constants.VIEW_WIDTH, constants.VIEW_HEIGHT);
+
+    if (menu.menuStack.length > 0) {
+        menu.menuStack[0].update();
     } else {
         currentScene.update(1 / 60);
         // Transition from one room to another
@@ -47,20 +54,12 @@ function update() {
             currentScene = currentScene.transition.targetScene;
             prevScene.transition = undefined;
         }
-        setScroll(currentScene.scrollX, currentScene.scrollY);
+    }
 
-        let context;
-        // clear and redraw on scene canvas
-        context = graphics.contextLayer.scene;
-        context.save();
-        context.setTransform(1, 0, 0, 1, 0, 0);
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-        context.restore();
-        currentScene.draw(context);
-
-        context = graphics.contextLayer.hud;
-        context.clearRect(0, 0, constants.VIEW_WIDTH, constants.VIEW_HEIGHT);
-        currentScene.drawHUD(context);
+    context.clearRect(0, 0, constants.VIEW_WIDTH, constants.VIEW_HEIGHT);
+    currentScene.draw(context);
+    if (menu.menuStack[0]) {
+        menu.menuStack[0].draw(context);
     }
     requestAnimationFrame(update);
 }
@@ -70,61 +69,45 @@ window.onload = function () {
     // keyboard events
     document.addEventListener('keydown', e => {
         inputs.pressedKeys.add(e.key);
-        switch (e.key) {
-            case 'p':
-                currentScene.isRunning = !currentScene.isRunning;
-                break;
-        }
     });
     document.addEventListener('keyup', e => {
         inputs.pressedKeys.delete(e.key);
     });
-    document.getElementById("sound-button").addEventListener('click', toggleSound);
 
     // prepare canvas and context
     const screen = document.getElementById('game-screen');
-    screen.style.width = `${constants.VIEW_WIDTH * SCALING}px`;
-    screen.style.height = `${constants.VIEW_HEIGHT * SCALING}px`;
+    screen.style.width = `${constants.VIEW_WIDTH * globals.scaling}px`;
+    screen.style.height = `${constants.VIEW_HEIGHT * globals.scaling}px`;
 
-    for (const canvas of screen.getElementsByTagName("canvas")) {
-        const context = canvas.getContext('2d');
-        graphics.contextLayer[canvas.id] = context;
-        canvas.width = SCALING * constants.VIEW_WIDTH;
-        canvas.height = SCALING * constants.VIEW_HEIGHT;
-        context.scale(SCALING, SCALING);
-        context.imageSmoothingEnabled = false;
-    }
+    const canvas = document.getElementById("screen-canvas");
+    canvas.width = globals.scaling * constants.VIEW_WIDTH;
+    canvas.height = globals.scaling * constants.VIEW_HEIGHT;
+    context = canvas.getContext('2d');
+    context.scale(globals.scaling, globals.scaling);
+    context.imageSmoothingEnabled = false;
 
     // load all scenes and start game
     graphics.loadGraphics.then(() => {
+        globals.players.push(new player.Player('blue'));
         currentScene = maps.scenes.celeste01;
         currentScene.spawnPointIndex = 1;
-        currentScene.setPlayer(new player.Player());
+        currentScene.addActor(globals.players[0].character);
         currentScene.reset();
         update();
     });
 };
 
 
-function toggleSound() {
-    if (sound.toggleSound()) {
-        document.getElementById("sound-button").innerText = "Sound On";
-    } else {
-        document.getElementById("sound-button").innerText = "Sound Off";
-    }
-}
-
-
 // Gamepad API
 window.addEventListener("gamepadconnected", (event) => {
     console.log("A gamepad connected:");
     console.log(event.gamepad);
-    inputs.gamepadConnected(event.gamepad);
+    inputs.onGamepadConnected(event.gamepad);
 });
 
 
 window.addEventListener("gamepaddisconnected", (event) => {
     console.log("A gamepad disconnected:");
     console.log(event.gamepad);
-    inputs.gamepadDisconnected(event.gamepad);
+    inputs.onGamepadDisconnected(event.gamepad);
 });

@@ -11,13 +11,59 @@ let previouslyPressedButtons = [];
 let currentlyPressedButtons = [];
 
 
-function gamepadConnected(gamepad) {
+function onGamepadConnected(gamepad) {
     currentlyPressedButtons[gamepad.index] = new Set();
 }
 
 
-function gamepadDisconnected(gamepad) {
+function onGamepadDisconnected(gamepad) {
     currentlyPressedButtons[gamepad.index] = undefined;
+}
+
+
+function isTappedKey(key) {
+    return currentlyPressedKeys.has(key) && !previouslyPressedKeys.has(key);
+}
+
+
+function isPressedKey(key) {
+    return currentlyPressedKeys.has(key);
+}
+
+
+function getPressedKeys() {
+    return new Set(currentlyPressedKeys);
+}
+
+
+function getTappedKeys() {
+    const tappedKeys = new Set();
+    for (const key of currentlyPressedKeys) {
+        if (!previouslyPressedKeys.has(key)) {
+            tappedKeys.add(key);
+        }
+    }
+    return tappedKeys;
+}
+
+
+function getPressedButtons() {
+    return currentlyPressedButtons.map(s => new Set(s));
+}
+
+
+function getTappedButtons() {
+    const tappedButtons = [];
+    for (let i = 0; i < currentlyPressedButtons.length; i++) {
+        const s = new Set();
+        for (const button of currentlyPressedButtons[i]) {
+            if (!previouslyPressedButtons[i].has(button)) {
+                s.add(button);
+            }
+        }
+        tappedButtons.push(s);
+    }
+    return tappedButtons;
 }
 
 
@@ -69,6 +115,7 @@ class PlayerInputs {
             right: 15,
             jump: 0,
             dash: 1,
+            pause: 9,
         }
         this.keymap = {
             up: 'ArrowUp',
@@ -77,6 +124,7 @@ class PlayerInputs {
             right: 'ArrowRight',
             jump: 'g',
             dash: 'f',
+            pause: 'Escape',
         }
         this.timers = {
             jumpBuffer: 0,
@@ -100,6 +148,10 @@ class PlayerInputs {
             );
     }
 
+    isTapped(action) {
+        return this.isPressed(action) && !this.isPreviouslyPressed(action);
+    }
+
     update(deltaTime) {
         for (const t in this.timers) {
             this.timers[t] -= deltaTime;
@@ -117,29 +169,16 @@ class PlayerInputs {
 }
 
 
-function waitForGamepadButton() {
-    let pressedButtonIndex = undefined;
-    for (const gamepad of navigator.getGamepads()) {
-        if (gamepad !== null) {
-            for (let i = 0; i < gamepad.buttons.length; i++) {
-                if (gamepad.buttons[i].pressed) {
-                    pressedButtonIndex = i;
-                    console.log(pressedButtonIndex);
-                }
-            }
-        }
-    }
-    if (pressedButtonIndex === undefined) {
-        requestAnimationFrame(waitForGamepadButton);
-    }
-}
-
-
 module.exports = {
     PlayerInputs,
-    gamepadConnected,
-    gamepadDisconnected,
+    onGamepadConnected,
+    onGamepadDisconnected,
     updateInputs,
     pressedKeys,
-    waitForGamepadButton,
+    isTappedKey,
+    isPressedKey,
+    getPressedKeys,
+    getTappedKeys,
+    getPressedButtons,
+    getTappedButtons,
 }

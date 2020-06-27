@@ -1,7 +1,11 @@
 "use strict";
 const constants = require('./constants');
+const globals = require('./globals');
 const graphics = require('./graphics');
+const inputs = require('./inputs');
+const menu = require('./menu');
 const physics = require('./physics');
+
 const U = constants.GRID_SIZE;
 
 
@@ -24,7 +28,6 @@ class Scene {
         this.things = new Set();
         this.spawnPoints = [];
         this.transition = undefined;
-        this.player = undefined;
         this.spawnPointIndex = 0;
         this.shouldReset = false;
         this.isRunning = true;
@@ -34,10 +37,10 @@ class Scene {
         const scene = new Scene(data.width * U, data.height * U);
         // make walls
         const walls = [
-                new physics.Solid(0, -1.5 * U, data.width * U, 0),
-                new physics.Solid(-.5 * U, 0, 0, data.height * U),
-                new physics.Solid((data.width + .5) * U, 0, 0, data.height * U),
-            ];
+            new physics.Solid(0, -1.5 * U, data.width * U, 0),
+            new physics.Solid(-.5 * U, 0, 0, data.height * U),
+            new physics.Solid((data.width + .5) * U, 0, 0, data.height * U),
+        ];
         for (const wall of walls) {
             wall.canBeClimbed = false;
             scene.addSolid(wall);
@@ -106,6 +109,10 @@ class Scene {
 
     update(deltaTime) {
         if (this.isRunning) {
+            if (inputs.isTappedKey("Escape") || globals.players.some(p => p.inputs.isTapped("pause"))) {
+                menu.menuStack.unshift(menu.mainMenu);
+                return;
+            }
             // update all elements
             for (const solid of this.solids) {
                 solid.beforeUpdate(deltaTime);
@@ -128,24 +135,24 @@ class Scene {
             }
 
             // scroll view
-            if (this.player) {
-                if (this.player.x - this.scrollX > .60 * constants.VIEW_WIDTH) {
+            if (globals.players.length > 0) {
+                if (globals.players[0].character.x - this.scrollX > .60 * constants.VIEW_WIDTH) {
                     this.scrollX = Math.min(
                         this.width - constants.VIEW_WIDTH,
-                        this.player.x - .60 * constants.VIEW_WIDTH);
-                } else if (this.player.x - this.scrollX < .40 * constants.VIEW_WIDTH) {
+                        globals.players[0].character.x - .60 * constants.VIEW_WIDTH);
+                } else if (globals.players[0].character.x - this.scrollX < .40 * constants.VIEW_WIDTH) {
                     this.scrollX = Math.max(
                         0,
-                        this.player.x - .40 * constants.VIEW_WIDTH);
+                        globals.players[0].character.x - .40 * constants.VIEW_WIDTH);
                 }
-                if (this.player.y - this.scrollY > .60 * constants.VIEW_HEIGHT) {
+                if (globals.players[0].character.y - this.scrollY > .60 * constants.VIEW_HEIGHT) {
                     this.scrollY = Math.min(
                         this.height - constants.VIEW_HEIGHT,
-                        this.player.y - .60 * constants.VIEW_HEIGHT);
-                } else if (this.player.y - this.scrollY < .40 * constants.VIEW_HEIGHT) {
+                        globals.players[0].character.y - .60 * constants.VIEW_HEIGHT);
+                } else if (globals.players[0].character.y - this.scrollY < .40 * constants.VIEW_HEIGHT) {
                     this.scrollY = Math.max(
                         U / 2,
-                        this.player.y - .40 * constants.VIEW_HEIGHT);
+                        globals.players[0].character.y - .40 * constants.VIEW_HEIGHT);
                 }
             }
 
@@ -170,6 +177,8 @@ class Scene {
     }
 
     draw(ctx) {
+        ctx.save();
+        ctx.translate(-this.scrollX, -this.scrollY);
         for (const thing of this.things) {
             thing.draw(ctx);
         }
@@ -179,26 +188,17 @@ class Scene {
         for (const actor of this.actors) {
             actor.draw(ctx);
         }
-    }
-
-    drawHUD(ctx) {
+        ctx.restore();
+        // draw HUD
+        ctx.save();
         ctx.fillStyle = "#ffffffaa";
         ctx.fillRect(1, 1, 42, 10);
         ctx.fillStyle = "#000000";
         ctx.textAlign = "right";
         ctx.font = 'normal 6px gameboy';
-        ctx.fillText(`${this.player.strawberries.size + this.player.temporaryStrawberries.size}/20`, 40, 8);
+        ctx.fillText(`${globals.players[0].character.strawberries.size + globals.players[0].character.temporaryStrawberries.size}/20`, 40, 8);
         ctx.drawImage(graphics.sheets.tiles, 80, 16, 16, 16, 2, 2, 8, 8);
-    }
-
-    setPlayer(player) {
-        if (this.player) {
-            this.removeActor(this.player);
-        }
-        if (player) {
-            this.addActor(player);
-        }
-        this.player = player;
+        ctx.restore();
     }
 
     addActor(actor) {

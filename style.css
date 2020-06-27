@@ -11,7 +11,7 @@
   top: 0;
   left: 0;
 }
-#game-screen #scene {
+#game-screen #screen-canvas {
   background: linear-gradient(0deg, #585858, #FFFFFF44), url(images/forest.png);
   background-size: cover;
 }

@@ -628,7 +628,7 @@ class Spring extends SceneElement {
     }
 
     onContactWith(player) {
-        sound.playSound(sound.springSound);
+        sound.playSound(sound.effects.spring);
         player.setState(constants.STATE_BOUNCE);
         player.speedX = 0;
         player.speedY = constants.BOUNCE_SPEED;
@@ -654,7 +654,7 @@ class DashDiamond extends SceneElement {
 
     onContactWith(player) {
         if (player.restoreDash()) {
-            sound.playSound(sound.dashDiamondSound);
+            sound.playSound(sound.effects.dashDiamond);
             this.isActive = false;
             this.timers.cooldown = 2;
         }
@@ -680,7 +680,7 @@ class Strawberry extends SceneElement {
 
     onContactWith(player) {
         if (player.isActive) {
-            sound.playSound(sound.strawberrySound);
+            sound.playSound(sound.effects.strawberry);
             player.temporaryStrawberries.add(this);
             this.isActive = false;
         }
@@ -780,10 +780,13 @@ class CrumblingBlock extends Solid {
                 }
             }
         } else {
-            if (this.scene.player && this.scene.player.isRiding(this)) {
-                sound.playSound(sound.crumblingBlockSound);
-                this.isFalling = true;
-                this.timers.fall = .5;  // duration before disappearing
+            for (const actor of this.scene.actors) {
+                if (actor.isRiding(this)) {
+                    sound.playSound(sound.effects.crumblingBlock);
+                    this.isFalling = true;
+                    this.timers.fall = .5;  // duration before disappearing
+                    break;
+                }
             }
         }
     }
