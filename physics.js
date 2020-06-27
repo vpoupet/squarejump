@@ -33,7 +33,7 @@ function segmentsOverlap(start1, size1, start2, size2) {
  * value < 1)
  */
 class SceneElement {
-    constructor(x, y, width, height, tileData = undefined) {
+    constructor(x, y, width, height, tiles = undefined) {
         /**
          * x-coordinate of the leftmost side of the bounding box (in pixels)
          * @type {number}
@@ -98,7 +98,7 @@ class SceneElement {
          * Information about the tile used to represent the SceneElement (if represented by a single tile)
          * @type {undefined}
          */
-        this.tileData = tileData;
+        this.tiles = tiles;
         /**
          * Current effects applied to the SceneElement
          * @type {[Effect]}
@@ -152,19 +152,21 @@ class SceneElement {
      * @param ctx {CanvasRenderingContext2D} context of the canvas in which the SceneElement is drawn
      */
     draw(ctx) {
-        if (this.tileData !== undefined) {
+        if (this.tiles !== undefined) {
             let shiftX = this.shiftX;
             let shiftY = this.shiftY;
             if (this.attachedTo) {
                 shiftX += this.attachedTo.shiftX;
                 shiftY += this.attachedTo.shiftY;
             }
-            ctx.drawImage(
-                graphics.sheets.tiles,
-                16 * this.tileData.x, 16 * this.tileData.y,
-                16, 16,
-                this.x + this.tileData.shiftX + shiftX, this.y + this.tileData.shiftY + shiftY,
-                8, 8);
+            for (const tileData of this.tiles) {
+                ctx.drawImage(
+                    graphics.sheets.tiles,
+                    16 * tileData.x, 16 * tileData.y,
+                    16, 16,
+                    this.x + tileData.shiftX + shiftX, this.y + tileData.shiftY + shiftY,
+                    8, 8);
+            }
         }
     }
 
@@ -429,8 +431,8 @@ class Actor extends SceneElement {
  * Two Solids might overlap, and in general the movement of a Solid is not affected by other Solids.
  */
 class Solid extends SceneElement {
-    constructor(x, y, width, height, tileData = undefined) {
-        super(x, y, width, height, tileData);
+    constructor(x, y, width, height, tiles = undefined) {
+        super(x, y, width, height, tiles);
         /**
          * Whether the Solid should be considered when checking collisions with an Actor
          * This attribute is used automatically by the move() method when the Solid pushes an Actor. It should not be
@@ -584,8 +586,8 @@ class Solid extends SceneElement {
  * Hazards are SceneElements that kill the player on contact
  */
 class Hazard extends SceneElement {
-    constructor(x, y, width, height, tileData = undefined) {
-        super(x, y, width, height, tileData);
+    constructor(x, y, width, height, tiles = undefined) {
+        super(x, y, width, height, tiles);
     }
 
     onContactWith(player) {
@@ -601,8 +603,8 @@ class Hazard extends SceneElement {
  * Contrary to regular Solids, Platforms are allowed to overlap with Actors.
  */
 class Platform extends Solid {
-    constructor(x, y, width, tileData) {
-        super(x, y, width, 0, tileData);
+    constructor(x, y, width, tiles) {
+        super(x, y, width, 0, tiles);
         this.canBeClimbed = false;
     }
 
@@ -622,9 +624,19 @@ class Platform extends Solid {
  * Springs are SceneElements that throw Actors up on contact
  */
 class Spring extends SceneElement {
-    constructor(x, y, tileData) {
-        super(x, y + U / 2, U, U / 2, tileData);
-        this.tileData.shiftY = -U / 2;
+    constructor(x, y) {
+        const tiles1 = [
+            new graphics.TileData(52, 0, -U / 2),
+            new graphics.TileData(53, U, -U / 2)
+        ];
+        const tiles2 = [
+            new graphics.TileData(54, 0, -U / 2),
+            new graphics.TileData(55, U, -U / 2)
+        ]
+        super(x, y + U / 2, 2 * U, U / 2, tiles1);
+        this.tiles1 = tiles1;
+        this.tiles2 = tiles2;
+        this.timers.extended = 0;
     }
 
     onContactWith(player) {
@@ -633,6 +645,12 @@ class Spring extends SceneElement {
         player.speedX = 0;
         player.speedY = constants.BOUNCE_SPEED;
         player.restoreDash();
+        this.timers.extended = .25;
+    }
+
+    draw(ctx) {
+        this.tiles = (this.timers.extended > 0) ? this.tiles2 : this.tiles1;
+        super.draw(ctx);
     }
 }
 
@@ -642,7 +660,7 @@ class Spring extends SceneElement {
  */
 class DashDiamond extends SceneElement {
     constructor(x, y) {
-        super(x, y, U, U, new graphics.TileData(21));
+        super(x, y, U, U, [new graphics.TileData(21)]);
     }
 
     update(deltaTime) {
@@ -675,7 +693,7 @@ class DashDiamond extends SceneElement {
  */
 class Strawberry extends SceneElement {
     constructor(x, y) {
-        super(x, y, U, U, new graphics.TileData(13));
+        super(x, y, U, U, [new graphics.TileData(13)]);
     }
 
     onContactWith(player) {
@@ -741,7 +759,7 @@ class Transition extends SceneElement {
  */
 class CrumblingBlock extends Solid {
     constructor(x, y) {
-        super(x, y, U, U, new graphics.TileData(57));
+        super(x, y, U, U, [new graphics.TileData(57)]);
         /**
          * Whether the block is disappearing
          * @type {boolean}
@@ -816,8 +834,17 @@ class CrumblingBlock extends Solid {
  * TriggerBlocks are Solids that start moving when they carry an Actor
  */
 class TriggerBlock extends Solid {
-    constructor(x, y, width, height, delay, movement) {
-        super(x, y, width, height);
+    constructor(x, y, width, height, delay, movement, tiles = undefined) {
+        if (tiles === undefined) {
+            tiles = [];
+            for (let i = 0; i < height; i += U) {
+                for (let j = 0; j < width; j += U) {
+                    const index = 64 + Math.floor(Math.random() * 4);
+                    tiles.push(new graphics.TileData(index, j, i));
+                }
+            }
+        }
+        super(x, y, width, height, tiles);
         /**
          * Whether the block has been triggered by an Actor but has not yet started executing the movement (during
          * trigger delay)
@@ -834,11 +861,6 @@ class TriggerBlock extends Solid {
          * @type {Effect}
          */
         this.triggeredMovement = movement;
-        /**
-         * Tile indexes to use when drawing the TriggerBlock on the Scene
-         * @type {number[]}
-         */
-        this.spriteIndexes = new Array((width / U) * (height / U)).fill(0).map(_ => 64 + Math.floor(Math.random() * 4));
     }
 
     update(deltaTime) {
@@ -877,42 +899,30 @@ class TriggerBlock extends Solid {
         this.isTriggered = false;
         this.triggeredMovement.reset();
     }
-
-    draw(ctx) {
-        let index = 0;
-        for (let y = this.y; y < this.y + this.height; y += U) {
-            for (let x = this.x; x < this.x + this.width; x += U) {
-                ctx.drawImage(
-                    graphics.sheets.tiles,
-                    16 * (this.spriteIndexes[index] % 8), 16 * ~~(this.spriteIndexes[index] / 8),
-                    16, 16,
-                    x + this.shiftX, y + this.shiftY,
-                    8, 8);
-                index += 1;
-            }
-        }
-    }
 }
 
 
 class FallingBlock extends TriggerBlock {
     constructor(x, y, width, height, delay, movement) {
-        super(x, y, width, height, delay, movement);
-        const w = width / U;
-        const h = height / U;
-        this.spriteIndexes.fill(9);
-        this.spriteIndexes[0] = 3;
-        this.spriteIndexes[w - 1] = 5;
-        this.spriteIndexes[w * (h - 1)] = 16;
-        this.spriteIndexes[w * h - 1] = 18;
-        for (let i = 1; i < w - 1; i++) {
-            this.spriteIndexes[i] = 4;
-            this.spriteIndexes[w * (h - 1) + i] = 17;
+        const tiles = [];
+        tiles.push(new graphics.TileData(3));
+        tiles.push(new graphics.TileData(5, width - U, 0));
+        tiles.push(new graphics.TileData(16, 0, height - U));
+        tiles.push(new graphics.TileData(18, width - U, height - U));
+        for (let x = U; x < width - U; x += U) {
+            tiles.push(new graphics.TileData(4, x, 0));
+            tiles.push(new graphics.TileData(17, x, height - U));
         }
-        for (let i = 1; i < h - 1; i++) {
-            this.spriteIndexes[w * i] = 8;
-            this.spriteIndexes[w * i + (w - 1)] = 10;
+        for (let y = U; y < height - U; y += U) {
+            tiles.push(new graphics.TileData(8, 0, y));
+            tiles.push(new graphics.TileData(10, width - U, y));
         }
+        for (let x = U; x < width - U; x += U) {
+            for (let y = U; y < height - U; y += U) {
+                tiles.push(new graphics.TileData(9, x, y));
+            }
+        }
+        super(x, y, width, height, delay, movement, tiles);
     }
 }
 
@@ -922,7 +932,7 @@ class FallingBlock extends TriggerBlock {
  */
 class SpikesUp extends Hazard {
     constructor(x, y) {
-        super(x, y + U / 2, U, U / 2, new graphics.TileData(40, 0, -U / 2));
+        super(x, y + U / 2, U, U / 2, [new graphics.TileData(40, 0, -U / 2)]);
     }
 
     onContactWith(player) {
@@ -938,7 +948,7 @@ class SpikesUp extends Hazard {
  */
 class SpikesDown extends SceneElement {
     constructor(x, y) {
-        super(x, y, U, U / 2, new graphics.TileData(42));
+        super(x, y, U, U / 2, [new graphics.TileData(42)]);
     }
 
     onContactWith(player) {
@@ -954,7 +964,7 @@ class SpikesDown extends SceneElement {
  */
 class SpikesRight extends SceneElement {
     constructor(x, y) {
-        super(x, y, U / 2, U, new graphics.TileData(41));
+        super(x, y, U / 2, U, [new graphics.TileData(41)]);
     }
 
     onContactWith(player) {
@@ -969,8 +979,8 @@ class SpikesRight extends SceneElement {
  * SpikesUp are Hazards that kill the Player if it moves rightwards on them
  */
 class SpikesLeft extends SceneElement {
-    constructor(x, y, tileData) {
-        super(x + U / 2, y, U / 2, U, new graphics.TileData(43, -U / 2, 0));
+    constructor(x, y) {
+        super(x + U / 2, y, U / 2, U, [new graphics.TileData(43, -U / 2, 0)]);
     }
 
     onContactWith(player) {

@@ -67,7 +67,7 @@ class Scene {
                     case 45:
                     case 46:
                     case 47:
-                        scene.addSolid(new physics.Platform(x, y, U, tileData));
+                        scene.addSolid(new physics.Platform(x, y, U, [tileData]));
                         break;
                     case 40:
                         scene.addThing(new physics.SpikesUp(x, y));
@@ -86,7 +86,7 @@ class Scene {
                     case 59:
                     case 60:
                     case 61:
-                        scene.addThing(new physics.Hazard(x, y, U, U, tileData));
+                        scene.addThing(new physics.Hazard(x, y, U, U, [tileData]));
                         break;
                     case 13:
                         scene.addThing(new physics.Strawberry(x + U / 2, y + U / 2));
@@ -94,13 +94,13 @@ class Scene {
                     case 57:
                         scene.addSolid(new physics.CrumblingBlock(x, y));
                         break;
-                    case 50:
                     case 52:
+                        scene.addThing(new physics.Spring(x, y));
+                        break;
                     case 53:
-                        scene.addThing(new physics.Spring(x, y, tileData));
                         break;
                     default:
-                        scene.addSolid(new physics.Solid(x, y, U, U, tileData));
+                        scene.addSolid(new physics.Solid(x, y, U, U, [tileData]));
                 }
             }
         }

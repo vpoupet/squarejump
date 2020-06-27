@@ -159,10 +159,10 @@ class PlayerInputs {
 
         this.xAxis = (this.isPressed("left") ? -1 : 0) + (this.isPressed("right") ? 1 : 0);
         this.yAxis = (this.isPressed("up") ? 1 : 0) + (this.isPressed("down") ? -1 : 0);
-        if (!this.isPreviouslyPressed("jump") && this.isPressed("jump")) {
+        if (this.isTapped("jump")) {
             this.timers.jumpBuffer = JUMP_BUFFER_TIME;
         }
-        if (!this.isPreviouslyPressed("dash") && this.isPressed("dash")) {
+        if (this.isTapped("dash")) {
             this.timers.dashBuffer = DASH_BUFFER_TIME;
         }
     }
