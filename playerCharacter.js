@@ -146,6 +146,7 @@ class PlayerCharacter extends physics.Actor {
                     this.setState(constants.STATE_NORMAL);
                 }
                 this.updateHorizontalMovement(deltaTime);
+                this.tryUpdateDash(deltaTime);
                 break;
             case constants.STATE_DASH:
                 if (this.timers.dash > constants.DASH_TIME) {
