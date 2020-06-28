@@ -7,7 +7,6 @@ const maps = require('./maps_');
 const menu = require('./menu');
 const player = require('./player');
 
-let currentScene;
 let context;
 let frameCounter = 0;
 let frameRateRefresh = 5;
@@ -47,17 +46,17 @@ function update() {
     if (menu.menuStack.length > 0) {
         menu.menuStack[0].update();
     } else {
-        currentScene.update(1 / 60);
+        globals.currentScene.update(1 / 60);
         // Transition from one room to another
-        if (currentScene.transition) {
-            const prevScene = currentScene;
-            currentScene = currentScene.transition.targetScene;
+        if (globals.currentScene.transition) {
+            const prevScene = globals.currentScene;
+            globals.currentScene = globals.currentScene.transition.targetScene;
             prevScene.transition = undefined;
         }
     }
 
     context.clearRect(0, 0, constants.VIEW_WIDTH, constants.VIEW_HEIGHT);
-    currentScene.draw(context);
+    globals.currentScene.draw(context);
     if (menu.menuStack[0]) {
         menu.menuStack[0].draw(context);
     }
@@ -89,10 +88,8 @@ window.onload = function () {
     // load all scenes and start game
     graphics.loadGraphics.then(() => {
         globals.players.push(new player.Player('blue'));
-        currentScene = maps.scenes.celeste01;
-        currentScene.spawnPointIndex = 1;
-        currentScene.addActor(globals.players[0].character);
-        currentScene.reset();
+        globals.currentScene = maps.scenes.celeste01;
+        globals.currentScene.spawnPointIndex = 1;
         update();
     });
 };

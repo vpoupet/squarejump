@@ -47,7 +47,7 @@ function getMusicVolume() {
 
 function setMusicVolume(value) {
     musicVolume = value;
-    bgMusic.volume = musicVolume / 16;
+    bgMusic.volume = musicVolume / 24;
 }
 
 

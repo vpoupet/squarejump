@@ -198,6 +198,7 @@ class ControlsMenu extends Menu {
 
 // Controls mapping menu
 const controlsMenu = new ControlsMenu();
+
 // General options menu
 const optionsMenu = new LineSelectMenu("Options");
 optionsMenu.lines.push(
@@ -232,14 +233,7 @@ optionsMenu.lines.push(
                 + ".".repeat(5 - sound.getMusicVolume())
                 + " ";
         }));
-// optionsMenu.lines.push(
-//     new MenuOption("Scale: x2")
-//         .setOnRight(function () {
-//             if (globals.scaling < 4) {
-//                 globals.scaling += 1;
-//             }
-//         })
-// )
+
 // Main pause menu
 const mainMenu = new LineSelectMenu("Paused");
 mainMenu.lines.push(new MenuOption("Resume").setOnActivate(function () {
@@ -252,13 +246,13 @@ mainMenu.lines.push(new MenuOption("Options").setOnActivate(function () {
 mainMenu.lines.push(new MenuOption("Controls").setOnActivate(function () {
     menuStack.unshift(controlsMenu);
 }));
-// mainMenu.lines.push(new MenuOption("Restart").setOnActivate(function () {
-//     console.log("restart...");
-// }));
+
 // Initial menu
 const startMenu = new LineSelectMenu("Squarejump");
 startMenu.canQuit = false;
 startMenu.lines.push(new MenuOption("Start").setOnActivate(function () {
+    globals.currentScene.addActor(globals.players[0].character);
+    globals.currentScene.reset();
     sound.bgMusic.play();
     menuStack.shift();
 }));
