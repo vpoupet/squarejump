@@ -1,4 +1,5 @@
 import re
+import subprocess
 
 with open("maps.js", "r") as f_in:
     with open("maps_.js", "w") as f_out:
@@ -17,3 +18,5 @@ with open("maps.js", "r") as f_in:
                     f_out.write(f'    scenes.{name} = s;\n')
                 except IndexError:
                     f_out.write(line)
+
+subprocess.run(['browserify', 'main.js', '--debug', '-o', 'bundle.js'])
