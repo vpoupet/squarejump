@@ -454,7 +454,7 @@ class Actor extends SceneElement {
     squish() {}
 
     /**
-     * Method called when the Actor should die
+     * Method called when the Actor dies
      */
     die() {}
 
@@ -485,39 +485,149 @@ class Actor extends SceneElement {
 class PlayerCharacter extends Actor {
     constructor(player, x = 0, y = 0) {
         super(x, y, 8, 14);
+        /**
+         * Associated Player
+         */
         this.player = player;
+        /**
+         * Current speed along x-axis
+         * @type {number}
+         */
         this.speedX = 0;
+        /**
+         * Current speed along y-axis
+         * @type {number}
+         */
         this.speedY = 0;
+        /**
+         * Current dashing speed along x-axis
+         * @type {number}
+         */
         this.dashSpeedX = 0;
+        /**
+         * Current dashing speed along y-axis
+         * @type {number}
+         */
         this.dashSpeedY = 0;
+        /**
+         * Number of available dashes (should be 1 or 0)
+         * @type {number}
+         */
         this.nbDashes = 1;
-
+        /**
+         * Whether the character is standing on a solid
+         * (set automatically during update)
+         * @type {boolean}
+         */
         this.isGrounded = true;
+        /**
+         * Whether the character is against a wall (and pressing the direction towards the wall)
+         * (set automatically during update)
+         * @type {boolean}
+         */
         this.isHuggingWall = false;
+        /**
+         * Whether there is a climbable Solid to the left of the character at a distance of at most
+         * constants.WALL_JUMP_CHECK_DISTANCE
+         * (set automatically during update)
+         * @type {boolean}
+         */
         this.hasWallLeft = false;
+        /**
+         * Whether there is a climbable Solid to the right of the character at a distance of at most
+         * constants.WALL_JUMP_CHECK_DISTANCE
+         * (set automatically during update)
+         * @type {boolean}
+         */
         this.hasWallRight = false;
+        /**
+         * Set of Strawberries that have been taken by the character in the current Scene
+         * - if the player dies, these Strawberries are reactivated in the Scene (and the player must take them again)
+         * - if the player changes Scene, these Strawberries are removed from the Scene and stored as "regular"
+         *     Strawberries for the player.
+         * @type {Set<Strawberry>}
+         */
         this.temporaryStrawberries = new Set();
+        /**
+         * Set of Strawberries that have been permanently taken by the player
+         * @type {Set<Strawberry>}
+         */
         this.strawberries = new Set();
 
+        /**
+         * Current state of the PlayerCharacter
+         * @type {number}
+         */
         this.state = constants.STATE_NORMAL;
-        this.sprite_direction = 1;
-        this.sprite_row = 1;
-        this.nb_sprites = 4;
-        this.animation_counter = 0;
+        /**
+         * Direction that the character is facing (1 if facing right, -1 if facing left)
+         * @type {number}
+         */
+        this.spriteDirection = 1;
+        /**
+         * Row of the currently playing sprite animation in the sprite sheet
+         *
+         * This value corresponds to the row in the "simple" sprite sheet. The real sprite sheets used have 4 copies
+         * of each row (two directions and two colors, whether the player can dash or not) so the actual row used when
+         * drawing the sprite is (4 * this.spriteRow + k) where 0 ≤ k ≤ 3 depends on the state of the player.
+         * @type {number}
+         */
+        this.spriteRow = 1;
+        /**
+         * Number of sprites in the currently playing sprite animation
+         * @type {number}
+         */
+        this.nbSprites = 4;
+        /**
+         * Counter to detemine which sprite of the current animation should be drawn
+         *
+         * The counter is incremented by 1 at each frame so the index of the sprite drawn is
+         * ~~(this.animationCount / ANIMATION_SLOWDOWN) % this.nbSprites
+         * @type {number}
+         */
+        this.animationCounter = 0;
 
         // timers
+        /**
+         * Delay after leaving the ground during which the player is still allowed to jump ("Coyote time")
+         * @type {number}
+         */
         this.timers.jumpGrace = 0;
+        /**
+         * Cooldown duration of dash (impossible to dash during this time)
+         * @type {number}
+         */
         this.timers.dashCooldown = 0;
+        /**
+         * Short time during which the player is frozen in place when dashing
+         * @type {number}
+         */
         this.timers.dashFreeze = 0;
+        /**
+         * Duration of the dash (speed is fixed during this time period)
+         * @type {number}
+         */
         this.timers.dash = 0;
+        /**
+         * Duration after a jump during which the player has a fixed upwards speed if the jump button is held
+         * @type {number}
+         */
         this.timers.varJump = 0;
+        /**
+         * Time interval after the player dies before it respawns
+         * @type {number}
+         */
         this.timers.dying = 0;
+        /**
+         * Duration after touching a Spring during which the upwards speed of the player is fixed
+         * @type {number}
+         */
         this.timers.bounce = 0;
     }
 
     draw(ctx) {
-        const index = ~~(this.animation_counter / ANIMATION_SLOWDOWN);
-        const row = 4 * this.sprite_row + (this.nbDashes ? 0 : 2) + (this.sprite_direction === -1 ? 1 : 0);
+        const index = ~~(this.animationCounter / ANIMATION_SLOWDOWN);
+        const row = 4 * this.spriteRow + (this.nbDashes ? 0 : 2) + (this.spriteDirection === -1 ? 1 : 0);
         ctx.drawImage(
             graphics.sheets[this.player.color],
             16 * index, 16 * row,
@@ -528,8 +638,8 @@ class PlayerCharacter extends Actor {
 
     update(deltaTime) {
         super.update(deltaTime);
-        this.animation_counter += 1;
-        this.animation_counter %= this.nb_sprites * ANIMATION_SLOWDOWN;
+        this.animationCounter += 1;
+        this.animationCounter %= this.nbSprites * ANIMATION_SLOWDOWN;
 
         // check environment
         this.isGrounded = false;
@@ -589,6 +699,10 @@ class PlayerCharacter extends Actor {
         }
     }
 
+    /**
+     * Updates the movement of the PlayerCharacter (mostly its speed) according to its current state and player inputs
+     * @param deltaTime {number} duration since last update
+     */
     updateMovement(deltaTime) {
         switch (this.state) {
             case constants.STATE_DEAD:
@@ -643,6 +757,14 @@ class PlayerCharacter extends Actor {
         }
     }
 
+    /**
+     * Checks if the character should dash (depending on player input and availability) and starts the dash (if it
+     * should).
+     *
+     * This method is called during updateMovement() if the current state of the PlayerCharacter can be interrupted by
+     * a dash.
+     * @returns {boolean} whether a dash has started
+     */
     tryUpdateDash() {
         if (this.nbDashes > 0 &&
             this.player.inputs.isPressed("dash") &&
@@ -663,6 +785,14 @@ class PlayerCharacter extends Actor {
         return false;
     }
 
+    /**
+     * Checks if the character should jump (depending on player input and availability) and starts the dash (if it
+     * should).
+     *
+     * This method is called during updateMovement() if the current state of the PlayerCharacter can be interrupted by
+     * a jump.
+     * @returns {boolean} whether a jump has started
+     */
     tryUpdateJump() {
         let didJump = false;
         if (this.player.inputs.isPressed("jump") &&
@@ -699,8 +829,13 @@ class PlayerCharacter extends Actor {
         return didJump;
     }
 
+    /**
+     * Updates the horizontal speed (this.speedX) of the PlayerCharacter depending on player input and current
+     * situation
+     * @param deltaTime
+     */
     updateHorizontalMovement(deltaTime) {
-        if (this.player.inputs.xAxis !== 0) this.sprite_direction = this.player.inputs.xAxis;
+        if (this.player.inputs.xAxis !== 0) this.spriteDirection = this.player.inputs.xAxis;
 
         // horizontal movement
         let sx = Math.abs(this.speedX);        // absolute value of the horizontal speed of the player
@@ -723,6 +858,11 @@ class PlayerCharacter extends Actor {
         this.speedX = dx * sx;
     }
 
+    /**
+     * Updates the vertical speed (this.speedY) of the PlayerCharacter depending on player input and current
+     * situation
+     * @param deltaTime
+     */
     updateVerticalMovement(deltaTime) {
         if (!this.isGrounded) {
             if (this.isHuggingWall) {
@@ -737,6 +877,9 @@ class PlayerCharacter extends Actor {
         }
     }
 
+    /**
+     * Sets the current sprite animation to play depending on the state of the PlayerCharacter
+     */
     updateAnimation() {
         if (this.state === constants.STATE_DEAD) {
 
@@ -759,6 +902,28 @@ class PlayerCharacter extends Actor {
         }
     }
 
+    /**
+     * Sets the currently playing sprite animation
+     * @param sprite_row {number} row of the animation in the (simple) sprite sheet
+     * @param nb_sprites {number} number of sprites in the animation
+     */
+    setAnimation(sprite_row, nb_sprites) {
+        if (sprite_row !== this.spriteRow) {
+            this.spriteRow = sprite_row;
+            this.animationCounter = 0;
+            this.nbSprites = nb_sprites;
+        }
+    }
+
+    /**
+     * Changes the state of the PlayerCharacter
+     *
+     * If the new state is different from the current state, special actions can be performed when leaving the current
+     * state and when entering the new state. This method does nothing if the new state is the same as the current
+     * state.
+     *
+     * @param newState {number} new state of the PlayerCharacter
+     */
     setState(newState) {
         if (newState !== this.state) {
             switch (this.state) {
@@ -805,17 +970,26 @@ class PlayerCharacter extends Actor {
         }
     }
 
+    /**
+     * Executes a transition from a Scene to another (triggered when the PlayerCharacter touches a Transition)
+     * @param transition {Transition} the Transition object that triggered the Scene change
+     */
     makeTransition(transition) {
-        // validate temporary strawberries
+        // store temporary strawberries permanently
         for (const strawberry of this.temporaryStrawberries) {
             strawberry.scene.removeThing(strawberry);
             this.strawberries.add(strawberry);
         }
         this.temporaryStrawberries.clear();
+        // move PlayerCharacter the the new Scene
         this.scene.removeActor(this);
         transition.targetScene.addActor(this);
         transition.targetScene.spawnPointIndex = transition.spawnPointIndex;
         this.restoreDash();
+    }
+
+    squish() {
+        this.die();
     }
 
     die() {
@@ -840,6 +1014,10 @@ class PlayerCharacter extends Actor {
         this.restoreDash();
     }
 
+    /**
+     * Restores the dash ability to the PlayerCharacter
+     * @returns {boolean} true if the PlayerCharacter didn't have a dash when the function was called
+     */
     restoreDash() {
         if (this.nbDashes === 1) {
             return false;
@@ -849,27 +1027,25 @@ class PlayerCharacter extends Actor {
         }
     }
 
-    squish() {
-        this.die();
-    }
-
+    /**
+     * Returns true if the PlayerCharacter is currently "riding" the Solid given as parameter, meaning that when the
+     * Solid moves it should move the PlayerCharacter too.
+     * A PlayerCharacter is considered to be riding a Solid it is standing directly on top of it or if it is hugging
+     * it (touching on left or right and pressing direction towards the Solid)
+     *
+     * @param solid {Solid}
+     * @returns {boolean} true if the PlayerCharacter is riding the solid
+     */
     isRiding(solid) {
         return super.isRiding(solid) ||
             (
+                solid.canBeClimbed &&
                 segmentsOverlap(this.y, this.height, solid.y, solid.height) &&
                 (
                     (this.player.inputs.xAxis === -1 && solid.x + solid.width === this.x) ||
                     (this.player.inputs.xAxis === 1 && solid.x === this.x + this.width)
                 )
             );
-    }
-
-    setAnimation(sprite_row, nb_sprites) {
-        if (sprite_row !== this.sprite_row) {
-            this.sprite_row = sprite_row;
-            this.animation_counter = 0;
-            this.nb_sprites = nb_sprites;
-        }
     }
 }
 
