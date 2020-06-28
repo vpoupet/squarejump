@@ -52,7 +52,15 @@ class SceneElement {
          * initial y-coordinate (used for reset())
          */
         this.startY = y;
+        /**
+         * Amount by which the element is shifted along the x-axis when drawn (doesn't affect actual physics)
+         * @type {number}
+         */
         this.shiftX = 0;
+        /**
+         * Amount by which the element is shifted along the y-axis when drawn (doesn't affect actual physics)
+         * @type {number}
+         */
         this.shiftY = 0;
         /**
          * width of the SceneElement (in pixels)
@@ -224,11 +232,16 @@ class SceneElement {
      * Move the Scene Element to a given position
      * @param x {number} x-coordinate of the target position
      * @param y {number} y-coordinate of the target position
+     * @param mx {number} momentum along the x-axis (optional)
+     * @param my {number} momentum along the y-axis (optional)
      */
-    moveTo(x, y, mx, my) {
+    moveTo(x, y, mx = 0, my = 0) {
         this.move(x - this.x - this.xRemainder, y - this.y - this.yRemainder, mx, my);
     }
 
+    /**
+     * Sets the element back to its original state (used when Scene is reset)
+     */
     reset() {
         this.x = this.startX;
         this.y = this.startY;
@@ -239,11 +252,21 @@ class SceneElement {
         this.effects.length = 0;    // clear all effects
     }
 
+    /**
+     * Adds an effect to the SceneElement
+     * @param effect {Effect} the Effect that is added
+     * @returns {SceneElement} the SceneElement
+     */
     addEffect(effect) {
         this.effects.push(effect);
         return this;
     }
 
+    /**
+     * Removes an effect on the SceneElement
+     * @param effect {Effect} the Effect to remove
+     * @returns {SceneElement} the SceneElement
+     */
     removeEffect(effect) {
         const index = this.effects.indexOf(effect);
         if (index !== -1) {
@@ -278,10 +301,33 @@ class SceneElement {
 class Actor extends SceneElement {
     constructor(x, y, width, height) {
         super(x, y, width, height);
+        /**
+         * Momentum held along the x-axis (given by carrying Solids)
+         * This attribute should be set using Actor.setMomentumX() to initalize the associated timer
+         * @type {number}
+         */
         this.momentumX = 0;
+        /**
+         * Momentum held along the y-axis (given by carrying Solids)
+         * This attribute should be set using Actor.setMomentumY() to initalize the associated timer
+         * @type {number}
+         */
         this.momentumY = 0;
+        /**
+         * Timer for storing momentum along the x-axis
+         * @type {number}
+         */
         this.timers.momentumX = 0;
+        /**
+         * Timer for storing momentum along the y-axis
+         * @type {number}
+         */
         this.timers.momentumY = 0;
+        /**
+         * Whether the Actor is a player character
+         * @type {boolean}
+         */
+        this.isPlayer = false;
     }
 
     move(dx, dy, mx = 0, my = 0) {
@@ -402,11 +448,19 @@ class Actor extends SceneElement {
     }
 
     /**
-     * Method to call when the Actor collides with a Solid while being pushed by another
+     * Method called when the Actor collides with a Solid while being pushed by another
      */
-    squish() {
-    }
+    squish() {}
 
+    /**
+     * Method called when the Actor should die
+     */
+    die() {}
+
+    /**
+     * Sets the value of this.mx and starts the associated timer
+     * @param mx {number} value of momentum along the x-axis
+     */
     setMomentumX(mx) {
         if (mx) {
             this.momentumX = mx;
@@ -414,6 +468,10 @@ class Actor extends SceneElement {
         }
     }
 
+    /**
+     * Sets the value of this.my and starts the associated timer
+     * @param my {number} value of momentum along the y-axis
+     */
     setMomentumY(my) {
         if (my) {
             this.momentumY = my;
@@ -447,14 +505,32 @@ class Solid extends SceneElement {
         this.canBeClimbed = true;
     }
 
+    /**
+     * Moves the Solid by a given amount
+     *
+     * After the Solid is moved, all Actors of the Scene must be checked
+     * - Actors that overlap the new position of the Solid must be pushed
+     * - Actors that are riding the solid must be carried
+     *
+     * The implementation is close to the description of the Celeste and Towerfall engine :
+     * https://medium.com/@MattThorson/celeste-and-towerfall-physics-d24bd2ae0fc5
+     * (with some modifications, for instance the fact that the Solid is moved by its full amount in one step, not
+     * 1 pixel at a time)
+     *
+     * @param dx {number} number of pixels to move right
+     * @param dy {number} number of pixels to move down
+     * @param mx {number} momentum along the x-axis (optional)
+     * @param my {number} momentum along the y-axis (optional)
+     */
     move(dx, dy, mx = 0, my = 0) {
+        // move all attached elements
         for (const thing of this.attachedElements) {
             thing.move(dx, dy, mx, my);
         }
 
         this.xRemainder += dx;
         this.yRemainder += dy;
-        const moveX = Math.round(this.xRemainder);
+        const moveX = Math.round(this.xRemainder);  // integer amount to move
         const moveY = Math.round(this.yRemainder);
 
         if (moveX || moveY) {
@@ -475,9 +551,11 @@ class Solid extends SceneElement {
                     for (const actor of this.scene.actors) {
                         if (actor.isActive) {
                             if (this.overlaps(actor)) {
+                                // push actors that overlap with this after move
                                 actor.moveX(this.x + this.width - actor.x, () => actor.squish());
                                 actor.setMomentumX(mx);
                             } else if (riding.has(actor)) {
+                                // carry actors that are riding this
                                 if (actor.movedX <= 0) {
                                     actor.moveX(moveX);
                                 } else if (actor.movedX < moveX) {
@@ -491,9 +569,11 @@ class Solid extends SceneElement {
                     for (const actor of this.scene.actors) {
                         if (actor.isActive) {
                             if (this.overlaps(actor)) {
+                                // push actors that overlap with this after move
                                 actor.moveX(this.x - actor.x - actor.width, () => actor.squish());
                                 actor.setMomentumX(mx);
                             } else if (riding.has(actor)) {
+                                // carry actors that are riding this
                                 if (actor.movedX >= 0) {
                                     actor.moveX(moveX);
                                 } else if (actor.movedX > moveX) {
@@ -514,9 +594,11 @@ class Solid extends SceneElement {
                     for (const actor of this.scene.actors) {
                         if (actor.isActive) {
                             if (this.overlaps(actor)) {
+                                // push actors that overlap with this after move
                                 actor.moveY(this.y + this.height - actor.y, () => actor.squish());
                                 actor.setMomentumY(my);
                             } else if (riding.has(actor)) {
+                                // carry actors that are riding this
                                 if (actor.movedY <= 0) {
                                     actor.moveY(moveY);
                                 } else if (actor.movedY < moveY) {
@@ -530,9 +612,11 @@ class Solid extends SceneElement {
                     for (const actor of this.scene.actors) {
                         if (actor.isActive) {
                             if (this.overlaps(actor)) {
+                                // push actors that overlap with this after move
                                 actor.moveY(this.y - actor.y - actor.height, () => actor.squish());
                                 actor.setMomentumY(my);
                             } else if (riding.has(actor)) {
+                                // carry actors that are riding this
                                 if (actor.movedY >= 0) {
                                     actor.moveY(moveY);
                                 } else if (actor.movedY > moveY) {
@@ -583,20 +667,6 @@ class Solid extends SceneElement {
 
 
 /**
- * Hazards are SceneElements that kill the player on contact
- */
-class Hazard extends SceneElement {
-    constructor(x, y, width, height, tiles = undefined) {
-        super(x, y, width, height, tiles);
-    }
-
-    onContactWith(player) {
-        player.die();
-    }
-}
-
-
-/**
  * Platforms are flat Solids (0 height) that Actors can pass through when moving upwards but not downwards (if they are
  * entirely higher than the Platform)
  *
@@ -616,138 +686,6 @@ class Platform extends Solid {
                 actor.y + actor.height + dy > this.y;
         }
         return false;
-    }
-}
-
-
-/**
- * Springs are SceneElements that throw Actors up on contact
- */
-class Spring extends SceneElement {
-    constructor(x, y) {
-        const tiles1 = [
-            new graphics.TileData(52, 0, -U / 2),
-            new graphics.TileData(53, U, -U / 2)
-        ];
-        const tiles2 = [
-            new graphics.TileData(54, 0, -U / 2),
-            new graphics.TileData(55, U, -U / 2)
-        ]
-        super(x, y + U / 2, 2 * U, U / 2, tiles1);
-        this.tiles1 = tiles1;
-        this.tiles2 = tiles2;
-        this.timers.extended = 0;
-    }
-
-    onContactWith(player) {
-        sound.playSound(sound.effects.spring);
-        player.setState(constants.STATE_BOUNCE);
-        player.speedX = 0;
-        player.speedY = constants.BOUNCE_SPEED;
-        player.restoreDash();
-        this.timers.extended = .25;
-    }
-
-    draw(ctx) {
-        this.tiles = (this.timers.extended > 0) ? this.tiles2 : this.tiles1;
-        super.draw(ctx);
-    }
-}
-
-
-/**
- * DashDiamonds are SceneElements that restore the dash counter of the Players who touch them
- */
-class DashDiamond extends SceneElement {
-    constructor(x, y) {
-        super(x, y, U, U, [new graphics.TileData(21)]);
-    }
-
-    update(deltaTime) {
-        super.update(deltaTime)
-        if (!this.isActive && this.timers.cooldown <= 0) {
-            this.isActive = true;
-        }
-    }
-
-    onContactWith(player) {
-        if (player.restoreDash()) {
-            sound.playSound(sound.effects.dashDiamond);
-            this.isActive = false;
-            this.timers.cooldown = 2;
-        }
-    }
-
-    draw(ctx) {
-        if (this.isActive) {
-            super.draw(ctx);
-        }
-    }
-}
-
-
-/**
- * Strawberries are collectibles that Player take on contact.
- * If a Player dies after collecting a Strawberry before changing Scene, the Strawberry is restored in the Scene
- * (and removed from the Player's list of collected Strawberries)
- */
-class Strawberry extends SceneElement {
-    constructor(x, y) {
-        super(x, y, U, U, [new graphics.TileData(13)]);
-    }
-
-    onContactWith(player) {
-        if (player.isActive) {
-            sound.playSound(sound.effects.strawberry);
-            player.temporaryStrawberries.add(this);
-            this.isActive = false;
-        }
-    }
-
-    draw(ctx) {
-        if (this.isActive) {
-            super.draw(ctx);
-        }
-    }
-}
-
-
-/**
- * Transitions are SceneElements that transfer a Player from one Scene to another on contact
- */
-class Transition extends SceneElement {
-    constructor(x, y, width, height, targetScene, targetX, targetY, spawnPointIndex = 0) {
-        super(x, y, width, height);
-        /**
-         * The Scene to which the Player is taken when touching the Transition
-         * @type {Scene}
-         */
-        this.targetScene = targetScene;
-        /**
-         * x-coordinate in the target Scene corresponding to this.x (when the Player transitions to the target Scene,
-         * its position is set to its current x-position + this.targetX - this.x
-         * @type {number}
-         */
-        this.targetX = targetX;
-        /**
-         * y-coordinate in the target Scene corresponding to this.y (when the Player transitions to the target Scene,
-         * its position is set to its current y-position + this.targetY + this.y
-         * @type {number}
-         */
-        this.targetY = targetY;
-        /**
-         * The index of the spawn point (in the target Scene's list of spawn points) corresponding to the Transition
-         * @type {number}
-         */
-        this.spawnPointIndex = spawnPointIndex;
-    }
-
-    onContactWith(player) {
-        this.targetScene.reset();
-        player.x += this.targetX - this.x;
-        player.y += this.targetY - this.y;
-        player.makeTransition(this);
-        this.scene.transition = this;
     }
 }
 
@@ -902,6 +840,12 @@ class TriggerBlock extends Solid {
 }
 
 
+/**
+ * FallingBlocks are TriggerBlocks that fall when triggered by an Actor
+ *
+ * Their behavior is the same as a TriggerBlock (the fall is defined by the associated movement) but are represented
+ * with different tiles.
+ */
 class FallingBlock extends TriggerBlock {
     constructor(x, y, width, height, delay, movement) {
         const tiles = [];
@@ -928,64 +872,232 @@ class FallingBlock extends TriggerBlock {
 
 
 /**
- * SpikesUp are Hazards that kill the Player if it moves downwards on them
+ * Things are SceneElements that do not interact with Solid physics, but can have an effect when an Actor touches them
+ */
+class Thing extends SceneElement {
+    constructor(x, y, width, height, tiles = undefined) {
+        super(x, y, width, height, tiles);
+    }
+
+    /**
+     * Action to execute when an Actor touches the Thing
+     * @param actor {Actor} the Actor that touches the Thing
+     */
+    onContactWith(actor) {}
+}
+
+
+/**
+ * Hazards are Things that kill the Actor on contact
+ */
+class Hazard extends Thing {
+    constructor(x, y, width, height, tiles = undefined) {
+        super(x, y, width, height, tiles);
+    }
+
+    onContactWith(actor) {
+        actor.die();
+    }
+}
+
+
+/**
+ * Springs are SceneElements that throw Players up on contact
+ */
+class Spring extends Thing {
+    constructor(x, y) {
+        const tiles1 = [
+            new graphics.TileData(52, 0, -U / 2),
+            new graphics.TileData(53, U, -U / 2)
+        ];
+        const tiles2 = [
+            new graphics.TileData(54, 0, -U / 2),
+            new graphics.TileData(55, U, -U / 2)
+        ]
+        super(x, y + U / 2, 2 * U, U / 2, tiles1);
+        this.tiles1 = tiles1;
+        this.tiles2 = tiles2;
+        this.timers.extended = 0;
+    }
+
+    onContactWith(actor) {
+        if (actor.isPlayer) {
+            sound.playSound(sound.effects.spring);
+            actor.setState(constants.STATE_BOUNCE);
+            actor.speedX = 0;
+            actor.speedY = constants.BOUNCE_SPEED;
+            actor.restoreDash();
+            this.timers.extended = .25;
+        }
+    }
+
+    draw(ctx) {
+        this.tiles = (this.timers.extended > 0) ? this.tiles2 : this.tiles1;
+        super.draw(ctx);
+    }
+}
+
+
+/**
+ * DashDiamonds are SceneElements that restore the dash counter of the Players who touch them
+ */
+class DashDiamond extends Thing {
+    constructor(x, y) {
+        super(x, y, U, U, [new graphics.TileData(21)]);
+    }
+
+    update(deltaTime) {
+        super.update(deltaTime)
+        if (!this.isActive && this.timers.cooldown <= 0) {
+            this.isActive = true;
+        }
+    }
+
+    onContactWith(actor) {
+        if (actor.isPlayer && actor.isActive) {
+            if (actor.restoreDash()) {
+                sound.playSound(sound.effects.dashDiamond);
+                this.isActive = false;
+                this.timers.cooldown = 2;
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (this.isActive) {
+            super.draw(ctx);
+        }
+    }
+}
+
+
+/**
+ * Strawberries are collectibles that Players take on contact.
+ * If a Player dies after collecting a Strawberry before changing Scene, the Strawberry is restored in the Scene
+ * (and removed from the Player's list of collected Strawberries)
+ */
+class Strawberry extends Thing {
+    constructor(x, y) {
+        super(x, y, U, U, [new graphics.TileData(13)]);
+    }
+
+    onContactWith(actor) {
+        if (actor.isPlayer && actor.isActive) {
+            sound.playSound(sound.effects.strawberry);
+            actor.temporaryStrawberries.add(this);
+            this.isActive = false;
+        }
+    }
+
+    draw(ctx) {
+        if (this.isActive) {
+            super.draw(ctx);
+        }
+    }
+}
+
+
+/**
+ * SpikesUp are Hazards that kill an Actor if it moves downwards on them
  */
 class SpikesUp extends Hazard {
     constructor(x, y) {
         super(x, y + U / 2, U, U / 2, [new graphics.TileData(40, 0, -U / 2)]);
     }
 
-    onContactWith(player) {
-        if (player.movedY - this.movedY >= 0) {
-            player.die();
+    onContactWith(actor) {
+        if (actor.movedY - this.movedY >= 0) {
+            actor.die();
         }
     }
 }
 
 
 /**
- * SpikesDown are Hazards that kill the Player if it moves upwards on them
+ * SpikesDown are Hazards that kill an Actor if it moves upwards on them
  */
 class SpikesDown extends SceneElement {
     constructor(x, y) {
         super(x, y, U, U / 2, [new graphics.TileData(42)]);
     }
 
-    onContactWith(player) {
-        if (player.movedY - this.movedY < 0) {
-            player.die();
+    onContactWith(actor) {
+        if (actor.movedY - this.movedY < 0) {
+            actor.die();
         }
     }
 }
 
 
 /**
- * SpikesRight are Hazards that kill the Player if it moves leftwards on them
+ * SpikesRight are Hazards that kill an Actor if it moves leftwards on them
  */
 class SpikesRight extends SceneElement {
     constructor(x, y) {
         super(x, y, U / 2, U, [new graphics.TileData(41)]);
     }
 
-    onContactWith(player) {
-        if (player.movedX - this.movedX < 0) {
-            player.die();
+    onContactWith(actor) {
+        if (actor.movedX - this.movedX < 0) {
+            actor.die();
         }
     }
 }
 
 
 /**
- * SpikesUp are Hazards that kill the Player if it moves rightwards on them
+ * SpikesUp are Hazards that kill an Actor if it moves rightwards on them
  */
 class SpikesLeft extends SceneElement {
     constructor(x, y) {
         super(x + U / 2, y, U / 2, U, [new graphics.TileData(43, -U / 2, 0)]);
     }
 
-    onContactWith(player) {
-        if (player.movedX - this.movedX > 0) {
-            player.die();
+    onContactWith(actor) {
+        if (actor.movedX - this.movedX > 0) {
+            actor.die();
+        }
+    }
+}
+
+
+/**
+ * Transitions are SceneElements that transfer a Player from one Scene to another on contact
+ */
+class Transition extends Thing {
+    constructor(x, y, width, height, targetScene, targetX, targetY, spawnPointIndex = 0) {
+        super(x, y, width, height);
+        /**
+         * The Scene to which the Player is taken when touching the Transition
+         * @type {Scene}
+         */
+        this.targetScene = targetScene;
+        /**
+         * x-coordinate in the target Scene corresponding to this.x (when the Player transitions to the target Scene,
+         * its position is set to its current x-position + this.targetX - this.x
+         * @type {number}
+         */
+        this.targetX = targetX;
+        /**
+         * y-coordinate in the target Scene corresponding to this.y (when the Player transitions to the target Scene,
+         * its position is set to its current y-position + this.targetY + this.y
+         * @type {number}
+         */
+        this.targetY = targetY;
+        /**
+         * The index of the spawn point (in the target Scene's list of spawn points) corresponding to the Transition
+         * @type {number}
+         */
+        this.spawnPointIndex = spawnPointIndex;
+    }
+
+    onContactWith(actor) {
+        if (actor.isPlayer) {
+            this.targetScene.reset();
+            actor.x += this.targetX - this.x;
+            actor.y += this.targetY - this.y;
+            actor.makeTransition(this);
+            this.scene.transition = this;
         }
     }
 }
@@ -993,19 +1105,20 @@ class SpikesLeft extends SceneElement {
 
 module.exports = {
     segmentsOverlap,
-    Hazard,
-    Solid,
     Actor,
+    Solid,
     Platform,
+    CrumblingBlock,
+    TriggerBlock,
+    FallingBlock,
+    Thing,
+    Hazard,
     Spring,
     DashDiamond,
     Strawberry,
-    Transition,
-    TriggerBlock,
-    FallingBlock,
-    CrumblingBlock,
     SpikesUp,
     SpikesDown,
-    SpikesLeft,
     SpikesRight,
+    SpikesLeft,
+    Transition,
 }

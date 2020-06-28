@@ -17,6 +17,7 @@ class PlayerCharacter extends physics.Actor {
     constructor(player, x = 0, y = 0) {
         super(x, y, 8, 14);
         this.player = player;
+        this.isPlayer = true;
         this.speedX = 0;
         this.speedY = 0;
         this.dashSpeedX = 0;
