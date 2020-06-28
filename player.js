@@ -1,10 +1,10 @@
-const playerCharacter = require('./playerCharacter');
+const physics = require('./physics');
 const inputs = require('./inputs');
 
 class Player {
     constructor(color) {
         this.color = color;
-        this.character = new playerCharacter.PlayerCharacter(this);
+        this.character = new physics.PlayerCharacter(this);
         this.inputs = new inputs.PlayerInputs();
     }
 
